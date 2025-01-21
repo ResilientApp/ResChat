@@ -77,7 +77,6 @@ def add_friend(username: str, friend_list: {}, nickname: str, my_username: str) 
         existing_page_num = get_kv(friendship_key + " PAGE_NUM")
         if existing_page_num == "\n" or existing_page_num == "" or existing_page_num == " ":
             set_kv(friendship_key + " PAGE_NUM", "1")
-        update_rsdb_friend_list(friend_list, my_username)
         return {"result": True, "message": friend_list}
 
 
@@ -100,12 +99,11 @@ def update_avatar(username: str, avatar_cid: str) -> Dict[str, str]:
     except Exception as e:
         return {"result": False, "message": f"Failed to update avatar: {str(e)}"}
 
-def delete_friend(target_username: str, friend_list: Dict[str, Dict], my_username: str) -> {}:
+def delete_friend(target_username: str, friend_list: Dict[str, Dict]) -> {}:
     """
     Delete a friend from the friend list
     :param target_username: Username of the friend to delete
     :param friend_list: Current friend list dictionary
-    :param my_username: Username of the current user
     :return: Dictionary with result status and updated friend list or error message
     """
     if target_username not in friend_list:
@@ -113,8 +111,6 @@ def delete_friend(target_username: str, friend_list: Dict[str, Dict], my_usernam
     
     try:
         del friend_list[target_username]
-        
-        update_rsdb_friend_list(friend_list, my_username) #Updpate in RSDB
         
         return {
             "result": True,
@@ -126,7 +122,7 @@ def delete_friend(target_username: str, friend_list: Dict[str, Dict], my_usernam
             "message": f"Failed to delete friend: {str(e)}"
         }
 
-def change_nickname(username: str, friend_list: Dict[str, Dict], new_nickname: str, my_username: str) -> {}:
+def change_nickname(username: str, friend_list: Dict[str, Dict], new_nickname: str) -> {}:
     """
     Change the nickname of a friend in the friend list and update RSDB
     :param username: Username of the friend whose nickname needs to be changed
@@ -151,9 +147,6 @@ def change_nickname(username: str, friend_list: Dict[str, Dict], new_nickname: s
         # Update the nickname while preserving other friend information
         friend_list[username]["nick_name"] = new_nickname
         
-        # Update the friend list in RSDB
-        update_rsdb_friend_list(friend_list, my_username)
-        
         return {
             "result": True,
             "message": friend_list
@@ -163,6 +156,8 @@ def change_nickname(username: str, friend_list: Dict[str, Dict], new_nickname: s
             "result": False,
             "message": f"Failed to update nickname: {str(e)}"
         }
+
+
 def test_friend_list_functions():
     my_username = "user1"
     friend_username = "friend1"

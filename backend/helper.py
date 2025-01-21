@@ -4,6 +4,8 @@ from fileinput import filename
 import os
 from textwrap import indent
 
+from backend.ipfs import download_file_from_ipfs
+
 
 def combine_string_in_ascii(str1: str, str2: str) -> str:
     """
@@ -50,3 +52,28 @@ def clear_cache():
         os.remove(file_path)
 
     return
+
+def download_avatar(friend_list: {}, username=None) -> {}:
+    try:
+        if username is None:
+            for user in friend_list:
+                avatar_cid = user["avatar_cid"]
+                if avatar_cid == "":
+                    continue
+                avatar_path = "profile_pictures/" + avatar_cid + ".jpg"
+                if not os.path.exists(avatar_path):
+                    download_file_from_ipfs(avatar_cid, avatar_path)
+        else:
+            avatar_cid = friend_list[username]["avatar_cid"]
+            avatar_path = "profile_pictures/" + avatar_cid + ".jpg"
+            if not os.path.exists(avatar_path):
+                download_file_from_ipfs(avatar_cid, avatar_path)
+        return {"result": True, "message": "Avatar(s) has been downloaded."}
+    except Exception as e:
+        return {"result": False, "message": str(e)}
+
+
+
+
+
+

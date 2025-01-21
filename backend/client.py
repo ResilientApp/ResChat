@@ -150,49 +150,76 @@ def encapsulated_add_friend(target_username: str, nickname: str) -> {}:
 
 
 def send_text_message(plain_text: str):
-    # Encrypt message for two users
-    aes_key = generate_random_aes_key()
-    encrypted_message = encrypt_text_with_aes(plain_text, aes_key)
-    encrypted_aes_key_sender = encrypt_aes_key_with_rsa(aes_key, my_public_key)
-    encrypted_aes_key_receiver = encrypt_aes_key_with_rsa(aes_key, current_chatting_friend_public_key)
-
-    # Get current page number
-    page_numer = int(get_kv(current_chatting_page_name + " PAGE_NUM"))
-
-    # Get current page and convert it into Page()
     try:
-        page = get_kv(current_chatting_page_name + " " + str(page_numer))
+        # Encrypt message for two users
+        aes_key = generate_random_aes_key()
+        encrypted_message = encrypt_text_with_aes(plain_text, aes_key)
+        encrypted_aes_key_sender = encrypt_aes_key_with_rsa(aes_key, my_public_key)
+        encrypted_aes_key_receiver = encrypt_aes_key_with_rsa(aes_key, current_chatting_friend_public_key)
+
+        # Get current page number
+        page_numer = int(get_kv(current_chatting_page_name + " PAGE_NUM"))
+
+        # Get current page and convert it into Page()
+        try:
+            page = get_kv(current_chatting_page_name + " " + str(page_numer))
+        except Exception as e:
+            page = Page()
+
+        # Sort page
+        page.sort_by_time()
+
+        # Check if the page is full
+        # Page is not full
+        if not page.is_full():
+            # Add message into page
+            page.add_message(my_username, "TEXT", datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                             encrypted_message, encrypted_aes_key_sender, encrypted_aes_key_receiver)
+        # Page is full
+        else:
+            # Create a new page
+            page = Page()
+
+            # Update page number in RSDB
+            page_numer += 1
+            set_kv(current_chatting_page_name + " PAGE_NUM", str(page_numer))
+
+            # Add message into page
+            page.add_message(my_username, "TEXT", datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                             encrypted_message, encrypted_aes_key_sender, encrypted_aes_key_receiver)
+
+        # Send page
+        set_kv(current_chatting_page_name + " " + str(page_numer), page.to_string())
+        return {"result": True, "message": "Message sent successfully"}
+
     except Exception as e:
-        page = Page()
-
-    # Sort page
-    page.sort_by_time()
-
-    # Check if the page is full
-    # Page is not full
-    if not page.is_full():
-        # Add message into page
-        page.add_message(my_username, "TEXT", datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                         encrypted_message, encrypted_aes_key_sender, encrypted_aes_key_receiver)
-    # Page is full
-    else:
-        # Create a new page
-        page = Page()
-
-        # Update page number in RSDB
-        page_numer += 1
-        set_kv(current_chatting_page_name + " PAGE_NUM", str(page_numer))
-
-        # Add message into page
-        page.add_message(my_username, "TEXT", datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                         encrypted_message, encrypted_aes_key_sender, encrypted_aes_key_receiver)
-
-    # Send page
-    set_kv(current_chatting_page_name + " " + str(page_numer), page.to_string())
+        return {"result": False, "message": str(e)}
 
 
 def send_file(file_path: str):
+    # Encrypt file for two users
+    aes_key = generate_random_aes_key()
+    if not os.path.exists(file_path):
+        return {"result": False, "message": f"{file_path} doesn't exist"}
+    res = encrypt_file_with_aes(file_path, aes_key)
+
+    if not res["result"]:
+        return res
+
+    encrypted_file_path = res["message"]
+
+    # Add file to IPFS
+    add_file_to_cluster(encrypted_file_path)
+
     # TODO
+    # Get current page number
+
+    # Get current page and convert it into Page()
+
+    # Sort page
+
+    # Check if the page is full
+
     return
 
 

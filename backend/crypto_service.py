@@ -1,7 +1,7 @@
 """
 This file contains all the encryption and decryption functions
 """
-import os
+import os, datetime
 from helper import write_log
 import Crypto
 from Crypto.Cipher import PKCS1_OAEP, AES
@@ -33,7 +33,6 @@ def load_rsa_private_key(private_key: bytes, password: str) -> {}:
     except Exception as e:
         write_log(e)
         return {"result": False, "message": str(e)}
-
 
 
 def generate_rsa_keys(password: str) -> list:
@@ -125,7 +124,6 @@ def decrypt_text_with_aes(cipher_text: str, aes_key: str) -> str:
         return ""
 
 
-
 def generate_random_aes_key():
     """Random generate one AES key"""
     write_log("Generating AES key")
@@ -190,3 +188,50 @@ def verify_key_pair(public_key: Crypto.PublicKey.RSA.RsaKey, private_key: Crypto
     except Exception as e:
         write_log(e)
         return False
+
+
+def encrypt_file_with_aes(file_path: str, aes_key: str) -> {}:
+    """
+    This function will encrypt a file and return the encrypted file path
+    """
+    # Check input file path
+    if not os.path.exists(file_path):
+        return {"result": False, "message": f"{file_path} does not exists."}
+
+    # Check output path
+    output_path = "temp/" + os.path.basename(file_path) + ".enc"
+    count = 1
+    while True:
+        if os.path.exists(output_path):
+            output_path = "temp/" + os.path.basename(file_path) + f"({count})" + ".enc"
+            count += 1
+        else:
+            break
+
+    # encrypt
+    res = pybind_aes.aes_encrypt_file(file_path, aes_key, output_path)
+
+    if res:
+        return {"result": True, "message": output_path}
+    else:
+        return {"result": False, "message": "Fail to encrypt file"}
+
+
+def decrypt_file_with_aes(encrypted_file_path: str, aes_key: str, output_path):
+    """
+    Decrypt a file and return output file path
+    """
+
+    # Check if input path exists
+    if not os.path.exists(encrypted_file_path):
+        return {"result": False, "message": f"{encrypted_file_path} does not exists"}
+
+    # Decrypt file
+    res = pybind_aes.aes_decrypt_file(encrypted_file_path, output_path, aes_key)
+
+    if res:
+        return {"result": True, "message": output_path}
+    else:
+        return {"result": False, "message": "Fail to decrypt file"}
+
+

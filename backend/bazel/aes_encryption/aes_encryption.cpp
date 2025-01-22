@@ -42,7 +42,7 @@ std::vector<unsigned char> hex_string_to_bytes(const std::string& hex_str) {
     return bytes;
 }
 
-bool aes_encrypt_file(const std::string& input_file, const std::string& hex_key) {
+bool aes_encrypt_file(const std::string& input_file, const std::string& hex_key, const std::string& output_path) {
     // Convert key from hex string to byte vector
     std::vector<unsigned char> key = hex_string_to_bytes(hex_key);
 
@@ -59,7 +59,7 @@ bool aes_encrypt_file(const std::string& input_file, const std::string& hex_key)
 
     // Construct the output file path in the temp directory with .enc extension
     std::filesystem::path input_path(input_file);
-    std::filesystem::path output_path = temp_folder / (input_path.filename().string() + ".enc");
+//    std::filesystem::path output_path = temp_folder / (input_path.filename().string() + ".enc");
 
     // Open output file for encrypted content
     std::ofstream outfile(output_path, std::ios::binary);

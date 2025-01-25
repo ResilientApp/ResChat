@@ -117,30 +117,38 @@ class TestEncryptionModule(unittest.TestCase):
         self.assertFalse(verify_key_pair(new_keys[0], self.private_key))
 
     def test_08_disk_operations(self):
+        # Test writing/loading keys
         write_keys_in_disk(self.public_key, self.keys[1])
         
+        # Load public key
         loaded_public = load_public_key_from_disk()
         
-        self.assertEqual(
-            public_key_to_string(self.public_key),
-            public_key_to_string(loaded_public),
-            "Public keys don't match"
-        )
+        # Verify public keys match by comparing their PEM strings
+        original_public_pem = public_key_to_string(self.public_key)
+        loaded_public_pem = public_key_to_string(loaded_public)
+        self.assertEqual(original_public_pem, loaded_public_pem, "Public keys mismatch")
         
+        # Load private key
         private_result = load_private_key_from_disk(self.password)
         self.assertTrue(private_result["result"], 
-                    f"Private key loading failed: {private_result['message']}")
+                    f"Private key load failed: {private_result['message']}")
         
-        loaded_private_result = private_result["message"]  # This is the result from load_rsa_private_key()
-        self.assertTrue(loaded_private_result["result"], 
-                    "Nested private key loading failed")
+        # Unwrap nested result
+        loaded_private_wrapper = private_result["message"]
+        self.assertTrue(loaded_private_wrapper["result"], 
+                    f"Key parsing failed: {loaded_private_wrapper['message']}")
+        loaded_private = loaded_private_wrapper["message"]
         
-        loaded_private = loaded_private_result["message"]  # This is the actual RSA key object
+        # Verify private keys match by checking they form a valid pair
+        self.assertTrue(
+            verify_key_pair(self.public_key, loaded_private),
+            "Loaded private key doesn't match original public key"
+        )
         
-        self.assertEqual(
-            self.private_key.export_key(passphrase=self.password),
-            loaded_private.export_key(passphrase=self.password),
-            "Private keys don't match"
+        # Additional check: verify the inverse relationship
+        self.assertTrue(
+            verify_key_pair(loaded_public, self.private_key),
+            "Original private key doesn't match loaded public key"
         )
 
 if __name__ == '__main__':

@@ -4,7 +4,6 @@ from fileinput import filename
 import os
 from textwrap import indent
 
-from backend.ipfs import download_file_from_ipfs
 
 
 def combine_string_in_ascii(str1: str, str2: str) -> str:
@@ -55,6 +54,7 @@ def clear_cache():
 
 def download_avatar(friend_list: {}, username=None) -> {}:
     try:
+        from ipfs import download_file_from_ipfs
         if username is None:
             for user in friend_list:
                 avatar_cid = user["avatar_cid"]

@@ -8,7 +8,9 @@ from Crypto.Cipher import PKCS1_OAEP, AES
 from Crypto.PublicKey import RSA
 import binascii
 import sys
-sys.path.append("bazel/bazel-bin/aes_encryption")
+import os
+current_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(current_dir, "bazel/bazel-bin/aes_encryption"))
 import pybind_aes
 
 def public_key_to_string(public_key: Crypto.PublicKey.RSA.RsaKey) -> str:

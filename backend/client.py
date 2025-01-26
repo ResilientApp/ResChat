@@ -270,8 +270,30 @@ def send_file(file_path: str):
 
 def update_chat_history():
     # Get current page number
+    page_number = int(get_kv(current_chatting_page_name + " PAGE_NUM"))
+
+    # Check page_number in current_chat_history
+    # A new page exists and previous page message count is not 20
+    if (page_number not in current_chat_history) and (page_number >= 2) and (len(current_chatting_page_name[page_number - 1]) != 20):
+        # Calculate how many messages missed
+        number_of_missed_messages = 20 - len(current_chatting_page_name[page_number - 1])
+
+        # Get previous page
+        previous_page = get_kv(current_chatting_page_name + " " + str(page_number - 1))
+        try:
+            previous_page = from_string(previous_page)
+        except Exception as e:
+            return
+
+        # Add missed messages into current_chat_history
+        # TODO
+
+
 
     # Get page
+    page = get_kv(current_chatting_page_name + " " + str(page_number))
+
+    # TODO
 
     # Check time stamp to see if there are new messages
 

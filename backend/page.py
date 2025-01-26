@@ -1,3 +1,5 @@
+from typing import Union
+
 import numpy as np
 from datetime import datetime
 
@@ -25,7 +27,7 @@ class Page:
     def is_full(self):
         return self.message_count >= 20
 
-    def add_message(self, sender_user_name: str, msg_type: str or {}, time_stamp: str,
+    def add_message(self, sender_user_name: str, msg_type: str or dict, time_stamp: str,
                     message: str, encrypted_aes_key_sender, encrypted_aes_key_receiver):
         """
         This function will add one message into page, no matter it is a file or text, when passing the message parameter

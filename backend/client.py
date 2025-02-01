@@ -7,7 +7,7 @@ from backend.page import from_string
 from crypto_service import *
 from user import *
 from friend_list import *
-
+import shutil
 from page import *
 import Crypto
 from Crypto.PublicKey import RSA
@@ -114,11 +114,7 @@ def select_friend(target_username: str) -> {}:
     current_chatting_friend_public_key =  string_to_public_key(get_kv(target_username))
     current_chatting_page_name = combine_string_in_ascii(my_username, target_username)
     current_chatting_page_number = int(get_kv(current_chatting_page_name + " PAGE_NUM"))
-    if current_chatting_page_number > 2:
-        current_chat_previous_page_number = current_chatting_page_number
-    else:
-        current_chat_previous_page_number = 0
-    # TODO: Load chat history
+    current_chat_previous_page_number = current_chatting_page_number - 2
     return
 
 
@@ -404,12 +400,61 @@ def initial_load_chat_history():
 
 
 
-def load_previous_chat_history():
-    #TODO
-    return
+def load_previous_chat_history() -> {}:
+    global current_chat_previous_page_number, current_chat_history
+
+    if current_chat_previous_page_number < 1:
+        return {"result": False, "Message": "You have already reached the oldest chat history"}
+
+    # Get target previous page's all messages
+    previous_page_string = get_kv(current_chatting_page_name + " " + str(current_chat_previous_page_number))
+    previous_page_all_messages = from_string(previous_page_string).all_messages()
+
+    # Process all messages
+    temp_list = []
+    for message in previous_page_all_messages:
+        # Check sender
+        sender = (message[0] == my_username)
+
+        if message[1] == "FILE":
+            file_info = message[3]
+            encrypted_aes_key = message[4] if sender else message[5]
+            file_info["key"] = decrypt_aes_key_with_rsa(encrypted_aes_key, my_private_key)
+            temp_list.append({"sender": sender, "message_type": "FILE", "time_stamp": message[2],
+                                      "message": file_info})
+        else:
+            encrypted_aes_key = message[4] if sender else message[5]
+            decrypted_message = decrypt_text_with_aes(message[3],
+                                                      decrypt_aes_key_with_rsa(encrypted_aes_key, my_private_key))
+            temp_list.append({"sender": sender, "message_type": "TEXT", "time_stamp": message[2],
+                                      "message": decrypted_message})
+    current_chat_history[current_chat_previous_page_number] = temp_list
+    current_chat_previous_page_number -= 1
+    return {"result": True, "Message": f"page {current_chat_previous_page_number + 1} loaded successfully"}
 
 
-def download_and_decrypt_file(save_path: str, file_cid: str):
-    # TODO
+def download_and_decrypt_file(save_path: str, file_info: {}) -> {}:
+    aes_key = file_info["key"]
+    cid = file_info["cid"]
+    file_name = file_info["file_name"]
+    file_peer_map = get_file_status(cid)["peer_map"]
+    file_status_checker = False
+
+    # Check file's availability
+    for peer in file_peer_map.values():
+        if peer["status"] == "pinned":
+            file_status_checker = True
+            break
+    if not file_status_checker:
+        return {"result": False, "Message": f"{cid} is currently unavailable"}
+
+    # Download encrypted file from ipfs
+    download_file_from_ipfs(cid, f"temp/{file_name}.enc")
+
+    # Decrypt file and move it to target dir
+    decrypt_file_with_aes(f"temp/{file_name}.enc", aes_key, f"{save_path}")
+    # TODO: Base on frontend component we decide to use to see if save_path includes file name or not.
+
+
     return
 

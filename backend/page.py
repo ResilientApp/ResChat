@@ -12,12 +12,12 @@ class Page:
         - Message type (msg_type), either "TEXT" or "FILE"
         - Time stamp (time_stamp)
         - AES encrypted message/file info (message)
-        - file info:    {
-                                "file_size": 12356(bytes),
-                                "file_name": "test.txt",
-                                "cid": 12345678,
-                                TODO: might be more
-                            }
+            - file info:    {
+                                    "file_size": 12356(bytes),
+                                    "file_name": "test.txt",
+                                    "cid": 12345678,
+                                    TODO: might be more
+                                }
         - Encrypted AES key by sender's RSA public key (encrypted_aes_key_sender)
         - Encrypted AES key by receiver's RSA public key (encrypted_aes_key_receiver)
         """
@@ -85,6 +85,8 @@ def from_string(page_string: str) -> Page:
                              encrypted_aes_key_sender, encrypted_aes_key_receiver)
     return res_page
 
-# page = Page()
-# page.add_message("A", "TEXT", "2025-1-25 17:51", {1: 1, 2: 2}, "AA", "AA")
-# print(page.all_messages())
+page = Page()
+page.add_message("A", "TEXT", "2025-1-25 17:51", {1: 1, 2: 2}, "AA", "AA")
+page.add_message("A", "TEXT", "2025-1-25 17:52", {1: 1, 2: 2}, "AA", "AA")
+
+print(page.all_messages())

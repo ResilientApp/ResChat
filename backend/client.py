@@ -49,7 +49,7 @@ current_chat_history = {1: [{"sender": True/False (To identify I am the send or 
                         2: [Max 20 messages]}
 message = {"cid": FILE CID, "key": DECRYPTED AES KEY, "file_name": FILE NAME, "file_size": FILE SIZE (Bytes)}
 """
-current_chat_history: []
+current_chat_history: {}
 
 
 
@@ -269,36 +269,139 @@ def send_file(file_path: str):
 
 
 def update_chat_history():
+    global current_chat_history
+    current_chat_history = {}
+
     # Get current page number
     page_number = int(get_kv(current_chatting_page_name + " PAGE_NUM"))
 
-    # Check page_number in current_chat_history
-    # A new page exists and previous page message count is not 20
-    if (page_number not in current_chat_history) and (page_number >= 2) and (len(current_chatting_page_name[page_number - 1]) != 20):
-        # Calculate how many messages missed
-        number_of_missed_messages = 20 - len(current_chatting_page_name[page_number - 1])
+    # Get page
+    page_string = get_kv(current_chatting_page_name + " " + str(page_number))
 
-        # Get previous page
-        previous_page = get_kv(current_chatting_page_name + " " + str(page_number - 1))
-        try:
-            previous_page = from_string(previous_page)
-        except Exception as e:
+    # Check if page string is empty
+    if page_string == "" or page_string == " " or page_string == "\n":
+        return
+
+    # Convert into Page()
+    page = from_string(page_string)
+    page.sort_by_time()
+
+    # Get all messages
+    all_messages = page.all_messages()
+
+    # Check if current_chat_history and all_messages are empty
+    if len(current_chat_history) == 0 and len(all_messages) == 0:
+        return
+
+    # Ensure current_chat_history contains the current page
+    if page_number not in current_chat_history:
+        current_chat_history[page_number] = []
+        if page_number == 1:
             return
 
-        # Add missed messages into current_chat_history
-        # TODO
+        previous_page_local_messages = current_chat_history.get(page_number - 1, [])
+
+        if len(previous_page_local_messages) != 20:
+            previous_page_string = get_kv(current_chatting_page_name + " " + str(page_number - 1))
+            previous_page = from_string(previous_page_string)
+            previous_page_all_messages = previous_page.all_messages()
+
+            i = len(previous_page_all_messages) - 1
+            tmp_list = []
+            if previous_page_local_messages:
+                last_time_stamp = previous_page_local_messages[-1]["time_stamp"]
+                while i >= 0 and last_time_stamp != previous_page_all_messages[i][2]:
+                    message = previous_page_all_messages[i]
+                    sender = message[0] == my_username
+
+                    if message[1] == "FILE":
+                        file_info = message[3]
+                        encrypted_aes_key = message[4] if sender else message[5]
+                        file_info["key"] = decrypt_aes_key_with_rsa(encrypted_aes_key, my_private_key)
+                        tmp_list.insert(0, {"sender": sender, "message_type": "FILE", "time_stamp": message[2], "message": file_info})
+                    else:
+                        encrypted_aes_key = message[4] if sender else message[5]
+                        decrypted_message = decrypt_text_with_aes(message[3], decrypt_aes_key_with_rsa(encrypted_aes_key, my_private_key))
+                        tmp_list.insert(0, {"sender": sender, "message_type": "TEXT", "time_stamp": message[2], "message": decrypted_message})
+                    i -= 1
+
+            current_chat_history[page_number - 1].extend(tmp_list)
+
+    # Check for new messages
+    if current_chat_history[page_number] and all_messages[-1][2] != current_chat_history[page_number][-1]["time_stamp"]:
+        i = len(all_messages) - 1
+        tmp_list = []
+        last_time_stamp = current_chat_history[page_number][-1]["time_stamp"]
+        while i >= 0 and all_messages[i][2] != last_time_stamp:
+            message = all_messages[i]
+            sender = message[0] == my_username
+
+            if message[1] == "FILE":
+                file_info = message[3]
+                encrypted_aes_key = message[4] if sender else message[5]
+                file_info["key"] = decrypt_aes_key_with_rsa(encrypted_aes_key, my_private_key)
+                tmp_list.insert(0, {"sender": sender, "message_type": "FILE", "time_stamp": message[2], "message": file_info})
+            else:
+                encrypted_aes_key = message[4] if sender else message[5]
+                decrypted_message = decrypt_text_with_aes(message[3], decrypt_aes_key_with_rsa(encrypted_aes_key, my_private_key))
+                tmp_list.insert(0, {"sender": sender, "message_type": "TEXT", "time_stamp": message[2], "message": decrypted_message})
+            i -= 1
+
+        current_chat_history[page_number].extend(tmp_list)
 
 
+def initial_load_chat_history():
+    global current_chat_history
+    # get page number
+    page_number = int(get_kv(current_chatting_page_name + " PAGE_NUM"))
 
-    # Get page
-    page = get_kv(current_chatting_page_name + " " + str(page_number))
+    current_page_list = []
+    # get current page and all messages
+    current_page_string = get_kv(current_chatting_page_name + " " + str(page_number))
 
-    # TODO
+    if current_page_string != "" and current_page_string != " " and current_page_string != "\n":
+        current_page_all_messages = from_string(current_page_string).all_messages()
+        for message in current_page_all_messages:
+            # Check sender
+            sender = (message[0] == my_username)
 
-    # Check time stamp to see if there are new messages
+            if message[1] == "FILE":
+                file_info = message[3]
+                encrypted_aes_key = message[4] if sender else message[5]
+                file_info["key"] = decrypt_aes_key_with_rsa(encrypted_aes_key, my_private_key)
+                current_page_list.append({"sender": sender, "message_type": "FILE", "time_stamp": message[2],
+                                    "message": file_info})
+            else:
+                encrypted_aes_key = message[4] if sender else message[5]
+                decrypted_message = decrypt_text_with_aes(message[3],
+                                                          decrypt_aes_key_with_rsa(encrypted_aes_key, my_private_key))
+                current_page_list.append({"sender": sender, "message_type": "TEXT", "time_stamp": message[2],
+                                 "message": decrypted_message})
+        current_chat_history[page_number] = current_page_list
 
-    # Decrypt new messages and add into current_chat_history
-    return
+    if page_number >= 2:
+        previous_page_list = []
+        previous_page_string = get_kv(current_chatting_page_name + " " + str(page_number - 1))
+        previous_page_all_messages = from_string(previous_page_string).all_messages()
+        for message in previous_page_all_messages:
+            # Check sender
+            sender = (message[0] == my_username)
+
+            if message[1] == "FILE":
+                file_info = message[3]
+                encrypted_aes_key = message[4] if sender else message[5]
+                file_info["key"] = decrypt_aes_key_with_rsa(encrypted_aes_key, my_private_key)
+                previous_page_list.append({"sender": sender, "message_type": "FILE", "time_stamp": message[2],
+                                    "message": file_info})
+
+            else:
+                encrypted_aes_key = message[4] if sender else message[5]
+                decrypted_message = decrypt_text_with_aes(message[3],
+                                                          decrypt_aes_key_with_rsa(encrypted_aes_key, my_private_key))
+                previous_page_list.append({"sender": sender, "message_type": "TEXT", "time_stamp": message[2],
+                                    "message": decrypted_message})
+        current_chat_history[page_number - 1] = previous_page_list
+
 
 
 def load_previous_chat_history():

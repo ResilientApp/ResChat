@@ -85,8 +85,8 @@ def from_string(page_string: str) -> Page:
                              encrypted_aes_key_sender, encrypted_aes_key_receiver)
     return res_page
 
-page = Page()
-page.add_message("A", "TEXT", "2025-1-25 17:51", {1: 1, 2: 2}, "AA", "AA")
-page.add_message("A", "TEXT", "2025-1-25 17:52", {1: 1, 2: 2}, "AA", "AA")
-
-print(page.all_messages())
+# page = Page()
+# page.add_message("A", "TEXT", "2025-1-25 17:51", {1: 1, 2: 2}, "AA", "AA")
+# page.add_message("A", "TEXT", "2025-1-25 17:52", {1: 1, 2: 2}, "AA", "AA")
+#
+# print(page.all_messages())

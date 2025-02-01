@@ -456,5 +456,5 @@ def download_and_decrypt_file(save_path: str, file_info: {}) -> {}:
     # TODO: Base on frontend component we decide to use to see if save_path includes file name or not.
 
 
-    return
+    return {"result": True, "message": f"Your file has successfully saved to {save_path}"}
 

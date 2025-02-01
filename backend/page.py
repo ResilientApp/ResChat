@@ -16,7 +16,6 @@ class Page:
                                     "file_size": 12356(bytes),
                                     "file_name": "test.txt",
                                     "cid": 12345678,
-                                    TODO: might be more
                                 }
         - Encrypted AES key by sender's RSA public key (encrypted_aes_key_sender)
         - Encrypted AES key by receiver's RSA public key (encrypted_aes_key_receiver)
@@ -35,6 +34,7 @@ class Page:
         :return True if message added successfully
         :return False: Current page is already full
         """
+        # TODO: UTC Time?
         if self.is_full():
             print("The page is full. Cannot add more messages.")
             return False

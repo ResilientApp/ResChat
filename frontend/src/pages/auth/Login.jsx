@@ -1,15 +1,15 @@
 import { Link, Stack, Typography } from '@mui/material'
 import React from 'react';
 import { Link as RouterLink } from 'react-router-dom';
-import AuthSocial from '../../sections/auth/AuthSocial';
-import LoginForm from '../../sections/auth/LoginForm';
+import AuthSocial from '../../sections/auth/AuthSocial.jsx';
+import LoginForm from '../../sections/auth/LoginForm.jsx';
 
 const Login = () => {
   return (
     <>
     <Stack spacing={2} sx={{mb:5, position:'relative'}}>
       <Typography variant='h4'>
-        Login to WeChat
+        Login to ResChat
       </Typography>
       <Stack direction='row' spacing={0.5}>
         <Typography variant='body2'>New User?</Typography>

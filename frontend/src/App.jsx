@@ -1,10 +1,9 @@
 import React from 'react';
+import RoutesComponent from './routes/index.jsx';
 
 function App() {
   return (
-      <div>
-        <h1>Welcome to ResChat, Development Underway</h1>
-      </div>
+    <RoutesComponent />
   );
 }
 

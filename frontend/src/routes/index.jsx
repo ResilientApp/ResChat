@@ -6,6 +6,7 @@ import Login from '../pages/auth/Login.jsx';
 import NewPassword from '../pages/auth/NewPassword.jsx';
 import Register from '../pages/auth/Register.jsx';
 import ResetPassword from '../pages/auth/ResetPassword.jsx';
+import Settings from '../pages/dashboard/Settings'
 
 const Home = () => <h2>Welcome to ResChat, Development Underway</h2>;
 const About = () => <h2>About</h2>;
@@ -28,6 +29,7 @@ export default function RoutesComponent() {
       element: <DashboardLayout />,
       children: [
         {element: <Home/>, path:'app'},
+        {element: <Settings/>, path:'settings'},
         {element: <About/>, path:'about'},
         {element: <Contact/>, path:'contact'},
       ],

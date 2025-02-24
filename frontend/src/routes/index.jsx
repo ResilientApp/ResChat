@@ -1,5 +1,5 @@
 import React from 'react';
-import { useRoutes } from "react-router-dom";
+import { Navigate, useRoutes } from "react-router-dom";
 import MainLayout from "../layouts/main";
 import DashboardLayout from "../layouts/dashboard";
 import Login from '../pages/auth/Login.jsx';
@@ -7,8 +7,9 @@ import NewPassword from '../pages/auth/NewPassword.jsx';
 import Register from '../pages/auth/Register.jsx';
 import ResetPassword from '../pages/auth/ResetPassword.jsx';
 import Settings from '../pages/dashboard/Settings'
+import Profile from '../pages/dashboard/Profile'
 import GeneralApp from '../pages/dashboard/GeneralApp'
-
+import Error404 from '../pages/Error404.jsx'
 
 const Home = () => <h2>Welcome to ResChat, Development Underway</h2>;
 const About = () => <h2>About</h2>;
@@ -32,9 +33,10 @@ export default function RoutesComponent() {
       children: [
         {element: <GeneralApp/>, path:'app'},
         {element: <Settings/>, path:'settings'},
-        {element: <About/>, path:'about'},
-        {element: <Contact/>, path:'contact'},
+        {element: <Profile/>, path:'profile'},
+        {element: <Error404/>, path:'404'},
+        {element: <Navigate to ="/404" replace />, path:"*" }
       ],
     }
-  ]);
+  ]); 
 }

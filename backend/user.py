@@ -18,7 +18,7 @@ def create_user(username: str, password: str, avatar_location: str) -> {}:
     write_log("Creating User")
     try:
         # Check username format
-        if len(username) != 10:
+        if len(username) < 5:
             raise Exception("The length of username must be 10")
 
         # Check password format

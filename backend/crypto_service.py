@@ -171,10 +171,13 @@ def load_private_key_from_disk(password: str) -> {}:
         return {"result": False, "message": str(e)}
 
 
-def verify_key_pair(public_key: Crypto.PublicKey.RSA.RsaKey, private_key: Crypto.PublicKey.RSA.RsaKey) -> bool:
+def verify_key_pair(public_key: Crypto.PublicKey.RSA.RsaKey, private_key_dict: dict) -> bool:
     """Verify if the RSA key pair matches"""
     write_log("Verifying RSA key pair")
     try:
+        if not private_key_dict["result"]:
+            return False
+        private_key = private_key_dict["message"]
         test_message = binascii.hexlify(os.urandom(20)).decode('utf-8')
         cipher_rsa_enc = PKCS1_OAEP.new(public_key)
         encrypted_message = cipher_rsa_enc.encrypt(test_message.encode('utf-8'))

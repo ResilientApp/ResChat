@@ -78,7 +78,8 @@ def load_user(username: str, password: str) -> {}:
 
         # Load public key from disk
         rsa_public_key = load_public_key_from_disk()
-        if rsa_public_key != get_kv(username):
+        #Need to convert rsa key to string before comparing
+        if public_key_to_string(rsa_public_key) != get_kv(username):
             raise exception(f"User {username} doesn't belong to this RSA public key")
 
         # Check if password can unlock RSA private key

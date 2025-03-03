@@ -57,7 +57,7 @@ def download_avatar(friend_list: {}, username=None) -> {}:
         from ipfs import download_file_from_ipfs
         if username is None:
             for user in friend_list:
-                avatar_cid = user["avatar_cid"]
+                avatar_cid = friend_list[user]["avatar_cid"]
                 if avatar_cid == "":
                     continue
                 avatar_path = "profile_pictures/" + avatar_cid + ".jpg"

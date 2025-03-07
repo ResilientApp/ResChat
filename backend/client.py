@@ -203,7 +203,8 @@ def send_text_message(plain_text: str):
 
         # Send page
         set_kv(current_chatting_page_name + " " + str(page_number), page.to_string())
-        return {"result": True, "message": "Message sent successfully"}
+        update_chat_history()
+        return {"result": True, "message": "Message sent successfully", "chat_history": current_chat_history}
 
     except Exception as e:
         return {"result": False, "message": str(e)}
@@ -262,7 +263,8 @@ def send_file(file_path: str):
 
     # Send page
     set_kv(current_chatting_page_name + " " + str(page_number), page.to_string())
-    return {"result": True, "message": "Message sent successfully"}
+    update_chat_history()
+    return {"result": True, "message": "Message sent successfully", "chat_history": current_chat_history}
 
 
 def update_chat_history():
@@ -345,6 +347,7 @@ def update_chat_history():
             i -= 1
 
         current_chat_history[page_number].extend(tmp_list)
+    return current_chat_history
 
 
 def initial_load_chat_history():
@@ -399,7 +402,7 @@ def initial_load_chat_history():
                 previous_page_list.append({"sender": sender, "message_type": "TEXT", "time_stamp": message[2],
                                     "message": decrypted_message})
         current_chat_history[page_number - 1] = previous_page_list
-
+    return current_chat_history
 
 
 def load_previous_chat_history() -> {}:
@@ -432,7 +435,8 @@ def load_previous_chat_history() -> {}:
                                       "message": decrypted_message})
     current_chat_history[current_chat_previous_page_number] = temp_list
     current_chat_previous_page_number -= 1
-    return {"result": True, "Message": f"page {current_chat_previous_page_number + 1} loaded successfully"}
+    return {"result": True, "message": f"page {current_chat_previous_page_number + 1} loaded successfully", 
+            "chat_history": current_chat_history}
 
 
 def download_and_decrypt_file(save_path: str, file_info: {}) -> {}:

@@ -68,12 +68,12 @@ async def send_file_handler(request):
     return web.json_response(result)
 
 async def update_chat_history_handler(request):
-    await run_sync(client.update_chat_history)
-    return web.json_response({"result": True, "message": "Chat history updated"})
+    chat_history = await run_sync(client.update_chat_history)
+    return web.json_response({"result": True, "message": "Chat history updated", "chat_history": chat_history})
 
 async def initial_load_handler(request):
-    await run_sync(client.initial_load_chat_history)
-    return web.json_response({"result": True, "message": "Initial chat history loaded"})
+    chat_history = await run_sync(client.initial_load_chat_history)
+    return web.json_response({"result": True, "message": "Initial chat history loaded", "chat_history": chat_history})
 
 async def load_previous_handler(request):
     result = await run_sync(client.load_previous_chat_history)

@@ -349,6 +349,7 @@ def update_chat_history():
 
 def initial_load_chat_history():
     global current_chat_history
+    current_chat_history = {}
     # get page number
     page_number = int(get_kv(current_chatting_page_name + " PAGE_NUM"))
 

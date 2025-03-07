@@ -93,7 +93,8 @@ def decrypt_aes_key_with_rsa(encrypted_aes_key: str, rsa_private_key) -> str:
     write_log("Decrypting AES key with RSA")
     try:
         encrypted_aes_key_bytes = binascii.unhexlify(encrypted_aes_key)
-        cipher_rsa = PKCS1_OAEP.new(rsa_private_key)
+        private_key = rsa_private_key["message"] if isinstance(rsa_private_key, dict) else rsa_private_key
+        cipher_rsa = PKCS1_OAEP.new(private_key)
         aes_key = cipher_rsa.decrypt(encrypted_aes_key_bytes)
         write_log("AES key decryption success")
         return aes_key.decode('utf-8')

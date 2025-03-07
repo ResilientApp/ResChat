@@ -17,10 +17,10 @@ from Crypto.PublicKey import RSA
 Group 1
 Following variables will be only initialize once after user login successfully 
 """
-my_username: str
-my_public_key: Crypto.PublicKey.RSA.RsaKey
-my_private_key: Crypto.PublicKey.RSA.RsaKey
-my_friend_list: dict
+my_username: str = None
+my_public_key: Crypto.PublicKey.RSA.RsaKey = None
+my_private_key: Crypto.PublicKey.RSA.RsaKey = None
+my_friend_list: dict = {}
 my_password: str
 my_public_key_string: str
 
@@ -142,7 +142,7 @@ def encapsulated_delete_friend(target_username: str) -> {}:
 
 def encapsulated_add_friend(target_username: str, nickname: str) -> {}:
     global my_friend_list, my_username
-    add_friend_result = add_friend(target_username, my_friend_list, nickname)
+    add_friend_result = add_friend(target_username, my_friend_list, nickname, my_username)
 
     # Check if result is True
     if add_friend_result["result"] is False:
@@ -174,11 +174,12 @@ def send_text_message(plain_text: str):
 
         # Get current page and convert it into Page()
         try:
-            page = get_kv(current_chatting_page_name + " " + str(page_number))
+            page_string = get_kv(current_chatting_page_name + " " + str(page_number))
         except Exception as e:
             page = Page()
 
         # Sort page
+        page = from_string(page_string)
         page.sort_by_time()
 
         # Check if the page is full

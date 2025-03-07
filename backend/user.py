@@ -72,25 +72,28 @@ def load_user(username: str, password: str) -> {}:
     : return When fail a dict {"result": False, "message": Corresponding error message}
     """
     try:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        keys_path = os.path.join(current_dir, "keys")
         # Check if both RSA public key and private key exists
-        if not os.path.exists("keys/public_key.pem") or not os.path.exists("keys/private_key.pem"):
-            raise exception("RSA public key or/and RSA private key not found")
+        if not os.path.exists(os.path.join(keys_path, "public_key.pem")) or not os.path.exists(os.path.join(keys_path, "private_key.pem")):
+            write_log(f"RSA public key or/and RSA private key not found in {keys_path}")
+            raise Exception("RSA public key or/and RSA private key not found")
 
         # Load public key from disk
         rsa_public_key = load_public_key_from_disk()
         #Need to convert rsa key to string before comparing
         if public_key_to_string(rsa_public_key) != get_kv(username):
-            raise exception(f"User {username} doesn't belong to this RSA public key")
+            raise Exception(f"User {username} doesn't belong to this RSA public key")
 
         # Check if password can unlock RSA private key
         res = load_private_key_from_disk(password)
         if not res["result"]:
-            raise exception(res["message"])
+            raise Exception(res["message"])
         rsa_private_key = res["message"]
 
         # Check RSA key pair matched
         if not verify_key_pair(rsa_public_key, rsa_private_key):
-            raise exception("RSA key pair doesn't match")
+            raise Exception("RSA key pair doesn't match")
 
         return {"result": True, "message": [rsa_public_key, rsa_private_key]}
 

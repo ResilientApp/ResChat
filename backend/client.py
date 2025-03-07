@@ -88,6 +88,12 @@ def login(username: str, password: str) -> {}:
 
 def signup(username: str, password: str, avatar_location: str) -> {}:
     global my_username, my_public_key, my_friend_list, my_private_key, my_public_key_string, my_password
+    user_exists = check_user_exists(username)
+    if user_exists:
+        return {
+            "result": False,
+            "message": "Username already exists"
+        }
     res = create_user(username, password, avatar_location)
     if res["result"]:
         my_username = username
@@ -408,8 +414,9 @@ def initial_load_chat_history():
 def load_previous_chat_history() -> {}:
     global current_chat_previous_page_number, current_chat_history
 
-    if current_chat_previous_page_number < 1:
-        return {"result": False, "Message": "You have already reached the oldest chat history"}
+    if current_chat_previous_page_number < 1:    
+        return {"result": True, "message": f"page {current_chat_previous_page_number + 2} loaded successfully", 
+            "chat_history": initial_load_chat_history()}
 
     # Get target previous page's all messages
     previous_page_string = get_kv(current_chatting_page_name + " " + str(current_chat_previous_page_number))
@@ -463,4 +470,14 @@ def download_and_decrypt_file(save_path: str, file_info: {}) -> {}:
 
 
     return {"result": True, "message": f"Your file has successfully saved to {save_path}"}
+def check_user_exists(username: str) -> bool:
+    try:
+        if not username or not isinstance(username, str):
+            return False
+        temp = get_kv(username)
+        if temp == "" or temp is None or temp.isspace():
+            return False
+        return True
+    except Exception:
+        return False
 

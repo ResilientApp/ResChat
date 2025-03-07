@@ -73,6 +73,8 @@ class Page:
 
 def from_string(page_string: str) -> Page:
     res_page = Page()
+    if not page_string.strip():
+        return res_page
     messages = page_string.strip().split("\n")
     for i in range(0, len(messages), 6):  # Changed step size to 6
         sender_user_name = messages[i]

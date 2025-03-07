@@ -21,3 +21,5 @@ MODULE.bazel
 MODULE.bazel.lock
 private_key.pem
 tests/log.txt
+*.jpg
+log.txt

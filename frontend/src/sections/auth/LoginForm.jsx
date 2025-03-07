@@ -6,21 +6,21 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import { Alert, Button, IconButton, InputAdornment, Link, Stack } from '@mui/material';
 import { RHFTextField } from '../../components/hook-form';
 import { Eye, EyeSlash } from 'phosphor-react';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
 const LoginForm = () => {
-
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
 
   //validation rules 
   const loginSchema = Yup.object().shape({
-    email:Yup.string().required('Email is required').email('Email must be a valid email address'),
-    password:Yup.string().required('Password is required')
+    email: Yup.string().required('Username is required'),
+    password: Yup.string().required('Password is required')
   });
 
   const defaultValues = {
-    email:'abc@gmail.com',
-    password:'abc@123'
+    email: '',
+    password: ''
   };
 
   const methods = useForm({
@@ -33,9 +33,28 @@ const LoginForm = () => {
 
    const onSubmit = async (data) =>{
         try {
-            //submit data to backend
+            console.log("Login attempt with data:", data);
+            const response = await fetch('http://localhost:8000/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    username: data.email,
+                    password: data.password
+                })
+            });
+            const result = await response.json();
+            console.log("Login response:", result);
+
+            if (!result.result) {
+                throw new Error(result.message || 'Login failed');
+            }
+            
+            navigate('/app');
+            
         } catch (error) {
-            console.log(error);
+            console.log("Login error:", error);
             reset();
             setError('afterSubmit',{
                 ...error,
@@ -49,10 +68,10 @@ const LoginForm = () => {
         <Stack spacing={3}>
             {!!errors.afterSubmit && <Alert severity='error'>{errors.afterSubmit.message}</Alert>}
         
-        <RHFTextField name='email' label='Email address'/>
+        <RHFTextField name='email' label='Username'/>
         <RHFTextField name='password' label='Password' type={showPassword ? 'text' : 'password'}
         InputProps={{endAdornment:(
-            <InputAdornment>
+            <InputAdornment position="end">
             <IconButton onClick={()=>{
                 setShowPassword(!showPassword);
             }}>

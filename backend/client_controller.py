@@ -26,15 +26,6 @@ async def login_handler(request):
     result = await run_sync(client.login, username, password)
     return web.json_response(result)
 
-async def check_user_exists(username):
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(f'http://localhost:7000/get/{username}') as response:
-                if response.status == 200:
-                    return True
-                return False
-    except:
-        return False
 
 async def signup_handler(request):
     try:

@@ -96,7 +96,7 @@ const Contact = () => {
         <Stack className='scrollbar'  sx={{height:'100%', position:'relative', flexGrow:1, overflowY:'scroll'}} p={3}
         spacing={3}>
           <Stack alignItems={'center'} direction='row' spacing={2}>
-            <Avatar src={faker.image.avatar()} alt={faker.person.firstName} sx={{height:64, width:64}}/>
+            <Avatar src={faker.image.avatar()} alt={faker.person.firstName()} sx={{height:64, width:64}}/>
             <Stack spacing={0.5}>
               <Typography variant='article' fontWeight={600}>
                 {faker.person.fullName()}
@@ -134,8 +134,8 @@ const Contact = () => {
           </Stack>
           <Stack direction='row' spacing={2} alignItems={'center'}>
             {[1,2,3].map((el)=>(
-              <Box>
-                <img src={faker.image.food()} alt={faker.person.fullName()}/>
+              <Box key={el}>
+                <img src={faker.image.url()} alt={faker.person.fullName()}/>
               </Box>
             ))}
           </Stack>
@@ -160,7 +160,7 @@ const Contact = () => {
           <Divider/>
           <Typography>1 group in common</Typography>
           <Stack direction='row' spacing={2} alignItems={'center'}>
-            <Avatar src={faker.image.avatar()} alt={faker.person.fullName}/>
+            <Avatar src={faker.image.avatar()} alt={faker.person.fullName()}/>
             <Stack spacing={0.5}>
               <Typography variant='subtitle2' >React Developers</Typography>
               <Typography variant='caption' >Devang, You</Typography>

@@ -16,9 +16,15 @@ const slice = createSlice({
         },
         updateSidebarType(state, action) {
             state.sidebar.type = action.payload.type;
+        },
+        setSelectedFriend(state, action) {
+            state.selectedFriend = action.payload;
+          },
+        setChatHistory(state, action) {
+        state.chatHistory = action.payload;
         }
     }
 });
 
-export const { toggleSidebar, updateSidebarType } = slice.actions;
+export const { toggleSidebar, updateSidebarType, setSelectedFriend, setChatHistory } = slice.actions;
 export const appReducer = slice.reducer;

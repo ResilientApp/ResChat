@@ -124,15 +124,21 @@ async def handle_signup_multipart(request):
             
             return username, password, avatar_location
 
+async def get_friend_list_handler(request):
+    
+    friend_list = client.load_my_friend_list(client.my_username)
+    return web.json_response({"result": True, "friend_list": friend_list})
+
 app = web.Application()
 
 # Setup CORS
 cors = cors_setup(app, defaults={
     "*": ResourceOptions(
         allow_credentials=True,
-        expose_headers="*",
         allow_headers="*",
-        allow_methods="*"
+        allow_methods="*",
+        expose_headers="*",
+        max_age=3600
     )
 })
 
@@ -150,7 +156,8 @@ routes = [
     web.get('/update_chat_history', update_chat_history_handler),
     web.get('/initial_load_chat_history', initial_load_handler),
     web.get('/load_previous_chat_history', load_previous_handler),
-    web.post('/download_file', download_file_handler)
+    web.post('/download_file', download_file_handler),
+    web.get('/get_friend_list', get_friend_list_handler)
 ]
 
 for route in routes:

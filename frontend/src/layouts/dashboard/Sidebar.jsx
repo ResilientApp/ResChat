@@ -1,15 +1,14 @@
 import React, { useState } from 'react';
-import { Avatar, Box, Divider, IconButton, Menu, MenuItem, Stack } from '@mui/material';
+import { Box, Divider, IconButton, Stack } from '@mui/material';
 import { useTheme } from "@mui/material/styles";
 import { Gear } from "phosphor-react";
-import { Nav_Buttons, Profile_Menu } from '../../data';
+import { Nav_Buttons } from '../../data';
 import useSettings from '../../hooks/useSettings';
-import { faker } from '@faker-js/faker';
 import AntSwitch from '../../components/AntSwitch.jsx';
 import Logo from '../../assets/Images/rc_logo.ico';
 import { useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
 
-// Updated getPath function (Only "/app" and "/settings" remain)
 const getPath = (index) => {
   switch (index) {
     case 0:
@@ -48,6 +47,7 @@ const SideBar = () => {
 
   const theme = useTheme();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   // state for selected button
   const [selected, setSelected] = useState(0); // Default to the "app" button
@@ -57,6 +57,7 @@ const SideBar = () => {
 
   // Filter out Group and Call buttons from Nav_Buttons (assuming index 1 and 2 are Group and Call)
   const filteredNavButtons = Nav_Buttons.filter((el) => el.index === 0 || el.index === 3);
+
 
   return (
     <Box
@@ -142,54 +143,8 @@ const SideBar = () => {
           </Stack>
         </Stack>
 
-        {/* Bottom Section */}
-        <Stack spacing={4}>
-          {/* Theme Switch */}
-          <AntSwitch onChange={onToggleMode} defaultChecked />
-
-          {/* User Avatar */}
-          <Avatar
-            id="basic-button"
-            sx={{ cursor: "pointer" }}
-            src={faker.image.avatar()}
-            aria-controls={open ? "basic-menu" : undefined}
-            aria-haspopup="true"
-            aria-expanded={open ? "true" : undefined}
-            onClick={handleClick}
-          />
-
-          {/* Profile Menu */}
-          <Menu
-            id="basic-menu"
-            anchorEl={anchorEl}
-            open={open}
-            onClose={handleClose}
-            MenuListProps={{
-              "aria-labelledby": "basic-button",
-            }}
-            anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-            transformOrigin={{ vertical: "bottom", horizontal: "left" }}
-          >
-            <Stack spacing={1} px={1}>
-              {Profile_Menu.map((el, idx) => (
-                <MenuItem key={idx} onClick={() => handleClick()}>
-                  <Stack
-                    onClick={() => {
-                      navigate(getMenuPath(idx));
-                    }}
-                    sx={{ width: 100 }}
-                    direction="row"
-                    alignItems={"center"}
-                    justifyContent="space-between"
-                  >
-                    <span>{el.title}</span>
-                    {el.icon}
-                  </Stack>
-                </MenuItem>
-              ))}
-            </Stack>
-          </Menu>
-        </Stack>
+        {/* Bottom Section - Only Theme Switch */}
+        <AntSwitch onChange={onToggleMode} defaultChecked />
       </Stack>
     </Box>
   );

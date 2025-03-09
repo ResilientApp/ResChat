@@ -123,6 +123,14 @@ def select_friend(target_username: str) -> {}:
     current_chat_previous_page_number = current_chatting_page_number - 2
     return
 
+def load_my_friend_list(username: str) -> dict:
+    global my_friend_list    
+    try:
+        return my_friend_list
+        
+    except Exception as e:
+        return {"result": False, "message": str(e)}
+
 
 def encapsulated_change_nickname(target_username: str, new_nickname: str) -> {}:
     global my_friend_list, my_username

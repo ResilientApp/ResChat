@@ -3,7 +3,7 @@ import { Box, IconButton, Stack, Typography, InputBase, Button, Divider, Avatar,
 import { ArchiveBox, CircleDashed, MagnifyingGlass } from 'phosphor-react';
 import {useTheme } from '@mui/material/styles';
 import React from 'react';
-import {ChatList} from '../../data';
+// Removed: import {ChatList} from '../../data';
 import { Search, SearchIconWrapper, StyledInputBase } from '../../components/Search';
 import ChatElement from '../../components/ChatElement';
 
@@ -45,27 +45,7 @@ const Chats = () => {
         </Stack>
 
         <Stack className='scrollbar' spacing={2} direction='column' sx={{flexGrow:1, overflow:'scroll', height:'100%'}}>
-
-            <Stack spacing={2.4}>
-              <Typography variant='subtitle2' sx={{color:"#676767"}}>
-                Pinned
-              </Typography>
-              {ChatList.filter((el)=> el.pinned).map((el)=>{
-                return <ChatElement key={el.id} {...el}/>
-              })}
-              
-            </Stack>
-          
-          <Stack spacing={2.4}>
-            <Typography variant='subtitle2' sx={{color:"#676767"}}>
-              All Chats
-            </Typography>
-            {ChatList.filter((el)=> !el.pinned).map((el)=>{
-              return <ChatElement key={el.id} {...el}/>
-            })}
-            
-          </Stack>
-          
+          <ChatElement />
         </Stack>
       </Stack>
 

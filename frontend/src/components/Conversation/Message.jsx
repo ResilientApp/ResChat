@@ -1,34 +1,48 @@
-import { Box, Stack } from '@mui/material';
-import React from 'react';
-import { Chat_History } from '../../data';
-import { DocMsg, LinkMsg, MediaMsg, ReplyMsg, TextMsg, TimeLine } from './MsgTypes';
+import { Box, Stack, Typography } from '@mui/material';
+import React, { useState, useEffect } from 'react';
 
 const Message = ({ menu }) => {
+  const [messages, setMessages] = useState([]);
+
+  useEffect(() => {
+    fetch('http://localhost:8000/initial_load_chat_history')
+      .then(res => res.json())
+      .then(data => {
+         if (data.result) {
+           let chats = data.chat_history;
+           // If chat history is not an array, convert its values to a flat array
+           if (!Array.isArray(chats)) {
+             chats = Object.values(chats).flat();
+           }
+           setMessages(chats);
+         }
+      })
+      .catch(err => console.error("Failed to fetch chat history", err));
+  }, []);
+
   return (
     <Box p={3}>
       <Stack spacing={3}>
-        {Chat_History.map((el, index) => {
-          const key = el.id ? el.id : index;
-          switch (el.type) {
-            case 'divider':
-              return <TimeLine key={key} el={el} />;
-            case 'msg':
-              switch (el.subtype) {
-                case 'img':
-                  return <MediaMsg key={key} el={el} menu={menu} />;
-                case 'doc':
-                  return <DocMsg key={key} el={el} menu={menu} />;
-                case 'link':
-                  return <LinkMsg key={key} el={el} menu={menu} />;
-                case 'reply':
-                  return <ReplyMsg key={key} el={el} menu={menu} />;
-                default:
-                  return <TextMsg key={key} el={el} menu={menu} />;
-              }
-            default:
-              return null;
-          }
-        })}
+        {messages.map((msg, index) => (
+          <Box 
+            key={index} 
+            sx={{ p: 1, border: '1px solid #ccc', borderRadius: 1 }}
+          >
+            <Typography variant="caption">
+              {msg.time_stamp}
+            </Typography>
+            {msg.message_type === "TEXT" && (
+              <Typography variant="body1">
+                {msg.message}
+              </Typography>
+            )}
+            {msg.message_type === "FILE" && (
+              <Typography variant="body1">
+                File: {msg.message.file_name} ({msg.message.file_size} bytes)
+              </Typography>
+            )}
+          </Box>
+        ))}
       </Stack>
     </Box>
   );

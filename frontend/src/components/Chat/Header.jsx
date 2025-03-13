@@ -13,9 +13,9 @@ import {
 } from "@mui/material";
 import { styled,useTheme } from "@mui/material/styles";
 import { CaretDown, MagnifyingGlass, Phone, VideoCamera } from "phosphor-react";
-import { faker } from "@faker-js/faker";
 import { useSearchParams } from "react-router-dom";
 import useResponsive from "../../hooks/useResponsive";
+import { useSelector } from "react-redux";
 
 const StyledBadge = styled(Badge)(({ theme }) => ({
   "& .MuiBadge-badge": {
@@ -65,6 +65,12 @@ const ChatHeader = () => {
   const isMobile = useResponsive("between", "md", "xs", "sm");
   const [searchParams, setSearchParams] = useSearchParams();
   const theme = useTheme();
+  const { selectedFriend, friendList = {} } = useSelector((state) => state.app || {});
+  
+  // Friend info from friend list, with safeguards
+  const friendInfo = selectedFriend && friendList && friendList[selectedFriend] ? friendList[selectedFriend] : null;
+  const displayName = friendInfo?.nick_name || selectedFriend || "User";
+  const avatarCid = friendInfo?.avatar_cid || "";
 
   const [conversationMenuAnchorEl, setConversationMenuAnchorEl] =
     React.useState(null);
@@ -109,11 +115,14 @@ const ChatHeader = () => {
               }}
               variant="dot"
             >
-              <Avatar alt={faker.person.fullName()} src={faker.image.avatar()} />
+              <Avatar 
+                alt={displayName} 
+                src={avatarCid ? `http://localhost:8080/ipfs/${avatarCid}` : null} 
+              />
             </StyledBadge>
           </Box>
           <Stack spacing={0.2}>
-            <Typography variant="subtitle2">{faker.person.fullName()}</Typography>
+            <Typography variant="subtitle2">{displayName}</Typography>
             <Typography variant="caption">Online</Typography>
           </Stack>
         </Stack>

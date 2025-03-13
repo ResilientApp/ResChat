@@ -12,6 +12,9 @@ const store = configureStore({
     }) // function that can run in between writing and reading from our store
 });
 
+// Export the store so we can use it elsewhere
+// We don't need to attach it to window since we'll use refs instead
+
 const persistor = persistStore(store);
 
 const {dispatch} = store;

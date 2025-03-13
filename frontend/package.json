@@ -19,6 +19,8 @@
     "@iconify/react": "^5.2.0",
     "@mui/material": "^6.4.5",
     "@reduxjs/toolkit": "^2.5.1",
+    "axios": "^1.8.3",
+    "date-fns": "^4.1.0",
     "framer-motion": "^12.4.7",
     "phosphor-react": "^1.4.1",
     "react": "^18.3.1",

@@ -16,8 +16,7 @@ const GeneralApp = () => {
   const theme = useTheme();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { sidebar, selectedFriend } = useSelector((store) => store.app);
-  const username = localStorage.getItem('username');
+  const { sidebar, selectedFriend, username } = useSelector((store) => store.app);
   
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
@@ -31,112 +30,72 @@ const GeneralApp = () => {
     setAnchorEl(null);
   };
 
-  // Initial component mount effect
   useEffect(() => {
-    console.log("[GeneralApp] Component mounted");
-    // Check localStorage for any pre-selected friend
-    const savedFriend = localStorage.getItem('lastSelectedFriend');
-    if (savedFriend && !selectedFriend) {
-      console.log("[GeneralApp] Restoring last selected friend:", savedFriend);
-      dispatch(setSelectedFriend(savedFriend));
+    const storedUsername = localStorage.getItem('username');
+    if (storedUsername && !username) {
+      dispatch(setUsername(storedUsername));
     }
-  }, [dispatch, selectedFriend]);
+  }, [dispatch, username]);
 
-  // Effect for handling friend selection and API calls
-  useEffect(() => {
-    console.log("[GeneralApp] Selected friend changed:", selectedFriend);
-    if (selectedFriend) {
-      // Save current selection to localStorage
-      localStorage.setItem('lastSelectedFriend', selectedFriend);
-      
-      // Show loading state
+  const handleFriendSelect = async (friendUsername) => {
+    if (friendUsername !== selectedFriend) {
+      dispatch(setSelectedFriend(friendUsername));
       setIsLoading(true);
-      
-      console.log("[GeneralApp] Preparing select_friend API call with target:", selectedFriend);
-      
-      // Make API call with the correct parameters expected by the backend
-      fetch('http://localhost:8000/select_friend', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ 
-          username: username, // Include your username
-          target_username: selectedFriend
-        }),
-        credentials: 'include' // Include cookies if needed for authentication
-      })
-      .then(res => {
-        console.log("[GeneralApp] select_friend status:", res.status);
-        if (!res.ok) {
-          throw new Error(`Server responded with status: ${res.status}`);
+
+      try {
+        // First API call - select_friend
+        const selectResponse = await fetch('http://localhost:8000/select_friend', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            username: username,
+            target_username: friendUsername
+          }),
+          credentials: 'include'
+        });
+
+        if (!selectResponse.ok) {
+          throw new Error(`Server responded with status: ${selectResponse.status}`);
         }
-        return res.json();
-      })
-      .then(data => {
-        console.log("[GeneralApp] select_friend parsed data:", data);
-        // Only if the select_friend call was successful, proceed to load chat history
-        if (data.result) {
-          console.log("[GeneralApp] Friend selection successful, loading chat history...");
-          return fetch('http://localhost:8000/load_previous_chat_history', {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              username: username,
-              target_username: selectedFriend
-            }),
-            credentials: 'include' // Include cookies if needed for authentication
-          });
+
+        const selectData = await selectResponse.json();
+        if (!selectData.result) {
+          throw new Error(selectData.message || 'Failed to select friend');
         }
-        throw new Error(data.message || 'Failed to select friend');
-      })
-      .then(res => {
-        console.log("[GeneralApp] load_previous_chat_history status:", res.status);
-        if (!res.ok) {
-          throw new Error(`Chat history request failed with status: ${res.status}`);
+
+        // Second API call - load chat history
+        const historyResponse = await fetch('http://localhost:8000/load_previous_chat_history', {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: username,
+            target_username: friendUsername
+          }),
+          credentials: 'include'
+        });
+
+        if (!historyResponse.ok) {
+          throw new Error(`Chat history request failed with status: ${historyResponse.status}`);
         }
-        return res.json();
-      })
-      .then(chatData => {
-        console.log("[GeneralApp] Chat history received:", chatData);
+
+        const chatData = await historyResponse.json();
         if (chatData.result) {
-          console.log("[GeneralApp] Updating chat history in Redux store with", 
-            chatData.chat_history ? chatData.chat_history.length : 0, "messages");
           dispatch(setChatHistory(chatData.chat_history || []));
         } else {
-          console.warn("[GeneralApp] Failed to load chat history:", chatData.message);
-          // Initialize with empty chat history on failure
           dispatch(setChatHistory([]));
         }
-      })
-      .catch(err => {
-        console.error("[GeneralApp] Error in friend selection flow:", err);
-        // Optionally show an error message to the user
-        dispatch(setChatHistory([])); // Reset chat history on error
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
-    }
-  }, [selectedFriend, dispatch, username]);
 
-  // Modified handler with navigation awareness
-  const handleFriendSelect = (friendUsername) => {
-    console.log("[GeneralApp] Friend selection triggered:", friendUsername, selectedFriend);
-    if (friendUsername !== selectedFriend) {  
-      dispatch(setSelectedFriend(friendUsername));
-      console.log(selectedFriend, "aa")
-      if (window.location.pathname !== '/app') {
-        navigate('/app');
+      } catch (err) {
+        console.error("[GeneralApp] Error in friend selection flow:", err);
+        dispatch(setChatHistory([]));
+      } finally {
+        setIsLoading(false);
       }
     }
   };
 
   return (
     <Stack sx={{ width: '100%' }}>
-      {/* User Profile Header */}
       <Box 
         sx={{ 
           p: 2,

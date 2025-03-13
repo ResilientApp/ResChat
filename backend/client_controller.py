@@ -9,6 +9,8 @@ import aiohttp
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import client
+from friend_list import *
+
 
 UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -126,8 +128,8 @@ async def handle_signup_multipart(request):
 
 async def get_friend_list_handler(request):
     
-    friend_list = client.load_my_friend_list(client.my_username)
-    return web.json_response({"result": True, "friend_list": friend_list})
+    friend_list_res = load_my_friend_list(client.my_username)
+    return web.json_response({"result": True, "friend_list": friend_list_res})
 
 app = web.Application()
 

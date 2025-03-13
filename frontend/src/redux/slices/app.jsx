@@ -4,7 +4,8 @@ const initialState = {
     sidebar: {
         open: false,
         type: "CONTACT", // can be CONTACT, STARRED, SHARED
-    }
+    },
+    username: null,
 };
 
 const slice = createSlice({
@@ -22,9 +23,12 @@ const slice = createSlice({
           },
         setChatHistory(state, action) {
         state.chatHistory = action.payload;
+        },
+        setUsername(state, action) {
+            state.username = action.payload;
         }
     }
 });
 
-export const { toggleSidebar, updateSidebarType, setSelectedFriend, setChatHistory } = slice.actions;
+export const { toggleSidebar, updateSidebarType, setSelectedFriend, setChatHistory, setUsername } = slice.actions;
 export const appReducer = slice.reducer;

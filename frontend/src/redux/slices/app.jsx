@@ -47,7 +47,9 @@ const slice = createSlice({
         
         // Friend actions
         setSelectedFriend(state, action) {
+            // Clear chat history when changing friends
             state.selectedFriend = action.payload;
+            state.chatHistory = {};
         },
         setFriendList(state, action) {
             // Ensure friendList is never null/undefined
@@ -72,50 +74,35 @@ const slice = createSlice({
         
         // Chat history actions
         setChatHistory(state, action) {
-            console.log('Setting chat history in Redux:', action.payload);
-            
-            // Ensure chat history is never null/undefined and has the right structure
+            if (!state.selectedFriend) {
+                console.warn('Attempted to set chat history without selected friend');
+                return;
+            }
+
             const newChatHistory = action.payload || {};
             
-            // Validate each page to ensure it has the right structure
-            // This catches backend data format issues
-            let validChatHistory = {};
+            // Validate and sanitize incoming chat history
+            const validChatHistory = {};
             
             Object.entries(newChatHistory).forEach(([pageNum, messages]) => {
-                // Ensure page number is valid
                 const pageNumber = parseInt(pageNum);
-                if (isNaN(pageNumber)) {
-                    console.warn(`Invalid page number: ${pageNum}`);
-                    return;
-                }
+                if (isNaN(pageNumber)) return;
                 
-                // Ensure messages is an array and not empty
                 if (!Array.isArray(messages)) {
-                    console.warn(`Page ${pageNum} does not contain a valid messages array`);
                     validChatHistory[pageNumber] = [];
                     return;
                 }
                 
-                // Filter out any invalid messages and keep only valid ones
-                const validMessages = messages.filter(msg => 
+                validChatHistory[pageNumber] = messages.filter(msg => 
                     msg && 
-                    (typeof msg.sender === 'boolean' || msg.sender === 'true' || msg.sender === 'false') &&
+                    msg.sender !== undefined &&
                     msg.message_type && 
                     msg.message && 
                     msg.time_stamp
                 );
-                
-                if (validMessages.length !== messages.length) {
-                    console.warn(`Filtered ${messages.length - validMessages.length} invalid messages from page ${pageNum}`);
-                }
-                
-                validChatHistory[pageNumber] = validMessages;
             });
             
-            // Set the validated chat history
             state.chatHistory = validChatHistory;
-            
-            console.log('Set validated chat history:', validChatHistory);
         },
         updateChatHistory(state, action) {
             // Deep merge new chat history with existing one

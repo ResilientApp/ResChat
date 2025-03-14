@@ -35,7 +35,7 @@ def add_file_to_cluster(file_path):
     response = requests.post(url, files=files)
     write_log(f"Uploading {os.path.basename(file_path)} to IPFS")
     if response.status_code == 200:
-        cid = response.json()['cid']['/']
+        cid = response.json()['cid']
         write_log(f"{os.path.basename(file_path)} Uploaded successfully")
         return cid
     else:

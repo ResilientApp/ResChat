@@ -80,84 +80,26 @@ const GeneralApp = () => {
     dispatch(setSelectedFriend(friendUsername));
 
     try {
-      // Step 1: Select the friend on the backend
       const selectResponse = await selectFriend(friendUsername);
       
       if (!selectResponse.result) {
         throw new Error(selectResponse.message || 'Failed to select friend');
       }
       
-      // Step 2: Select friend on backend then load messages using loadPreviousChatHistory
-      console.log('Friend selected, loading messages with loadPreviousChatHistory API');
+      // After successful friend selection, load chat history
+      dispatch(setChatHistory({})); // Clear existing chat history
       
-      try {
-        // Load messages directly using loadPreviousChatHistory
-        const previousResponse = await loadPreviousChatHistory();
-        console.log('Chat history response from loadPreviousChatHistory:', previousResponse);
-        
-        if (previousResponse.result) {
-          if (previousResponse.chat_history) {
-            console.log('Setting chat history from loadPreviousChatHistory:', previousResponse.chat_history);
-            dispatch(setChatHistory(previousResponse.chat_history));
-          } else {
-            console.warn('loadPreviousChatHistory returned empty chat_history');
-            dispatch(setChatHistory({}));
-          }
-        } else {
-          console.error('Failed to load previous chat history:', previousResponse.message);
-          
-          // Fallback to initialLoadChatHistory only if loadPreviousChatHistory fails
-          console.log('Falling back to initialLoadChatHistory...');
-          const initialResponse = await initialLoadChatHistory();
-          
-          if (initialResponse.result && initialResponse.chat_history) {
-            console.log('Setting chat history from initialLoadChatHistory:', initialResponse.chat_history);
-            dispatch(setChatHistory(initialResponse.chat_history));
-          } else {
-            throw new Error(initialResponse.message || 'Failed to load chat history');
-          }
-        }
-      } catch (error) {
-        console.error('Error loading chat history:', error);
-        throw new Error('Failed to load chat history');
-      }
     } catch (error) {
-      console.error("Error in friend selection flow:", error);
+      console.error("Error selecting friend:", error);
       dispatch(setError(error.message));
       dispatch(showNotification({
         message: error.message,
         type: 'error'
       }));
-      dispatch(setChatHistory({}));
     } finally {
       dispatch(setLoading(false));
     }
   };
-
-  // Set up polling for chat updates when a friend is selected
-  useEffect(() => {
-    let intervalId;
-    
-    if (selectedFriend) {
-      // Set up periodic polling to fetch chat history updates
-      intervalId = setInterval(async () => {
-        try {
-          const response = await fetchChatUpdates();
-          if (response.result && response.chat_history) {
-            dispatch(updateChatHistory(response.chat_history));
-          }
-        } catch (error) {
-          console.error("Error updating chat history:", error);
-        }
-      }, 2000); // Poll every 2 seconds
-    }
-    
-    return () => {
-      if (intervalId) {
-        clearInterval(intervalId);
-      }
-    };
-  }, [selectedFriend, dispatch]);
 
   return (
     <Stack sx={{ width: '100%' }}>

@@ -50,7 +50,8 @@ const LoginForm = () => {
             if (!result.result) {
                 throw new Error(result.message || 'Login failed');
             }
-            
+            console.log("Action setting username", data.email)
+            localStorage.setItem('username',data.email)
             navigate('/app');
             
         } catch (error) {

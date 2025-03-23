@@ -53,7 +53,7 @@ const GeneralApp = () => {
   
   useEffect(() => {
     const storedUsername = localStorage.getItem('username');
-    if (storedUsername && !username) {
+    if (storedUsername) {
       dispatch(setUsername(storedUsername));
     }
   }, [dispatch, username]);

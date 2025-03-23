@@ -33,6 +33,7 @@ const slice = createSlice({
         
         // User actions
         setUsername(state, action) {
+            console.log("Action received:", action);
             state.username = action.payload;
             localStorage.setItem('username', action.payload);
         },

@@ -234,7 +234,7 @@ const FriendList = ({ onSelect }) => {
               >
                 <ListItemAvatar>
                   <Avatar
-                    src={info.avatar_cid ? `http://localhost:8080/ipfs/${info.avatar_cid}` : null}
+                    src={info.avatar_cid ? `profile_pictures/${info.avatar_cid}.jpg` : null}
                     alt={info.nick_name || username}
                   />
                 </ListItemAvatar>

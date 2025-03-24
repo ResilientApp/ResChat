@@ -44,7 +44,7 @@ const Header = () => {
               {avatarCid ? (
                 <Avatar 
                   alt={displayName} 
-                  src={`http://localhost:8080/ipfs/${avatarCid}`}
+                  src={`profile_pictures/${avatarCid}.jpg`}
                 />
               ) : (
                 <Avatar>

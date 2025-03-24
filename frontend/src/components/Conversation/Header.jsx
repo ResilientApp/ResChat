@@ -54,24 +54,13 @@ const Header = () => {
             </StyledBadge>
           </Box>
           <Stack spacing={0.2}>
-            <Typography variant='subtitle2'>
+            <Typography variant='h4'>
               {displayName}
             </Typography>
-            <Typography variant='caption'>
-              Online
-            </Typography>
+            
           </Stack>
         </Stack>
         <Stack direction='row' alignItems='center' spacing={3}>
-          <IconButton>
-            <VideoCamera/>
-          </IconButton>
-          <IconButton>
-            <Phone/>
-          </IconButton>
-          <IconButton>
-            <MagnifyingGlass/>
-          </IconButton>
           <Divider orientation='vertical' flexItem/>
           <IconButton>
             <CaretDown/>

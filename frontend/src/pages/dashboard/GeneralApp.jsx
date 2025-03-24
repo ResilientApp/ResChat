@@ -116,8 +116,8 @@ const GeneralApp = () => {
           <Stack direction="row" alignItems="center" spacing={2}>
             <Avatar 
               sx={{ width: 48, height: 48 }}
-              src={`http://localhost:8080/ipfs/${localStorage.getItem('avatar_cid')}`} 
-              alt={username || 'User'}
+              src = {`profile_pictures/${localStorage.getItem('user_cid')}.jpg`}
+              alt={username || 'User DP'}
             />
             <Typography variant="h6">{username || 'User'}</Typography>
           </Stack>

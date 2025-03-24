@@ -79,7 +79,7 @@ def login(username: str, password: str) -> {}:
     # Download avatars
     res = download_avatar(my_friend_list)
     if res["result"]:
-        return {"result": True, "message": "Login in successfully"}
+        return {"result": True, "message": "Login in successfully", "user_cid": res["user_cid"]}
     else:
         return res
 

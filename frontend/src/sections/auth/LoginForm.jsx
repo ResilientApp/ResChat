@@ -52,6 +52,7 @@ const LoginForm = () => {
             }
             console.log("Action setting username", data.email)
             localStorage.setItem('username',data.email)
+            localStorage.setItem('user_cid', result.user_cid)
             navigate('/app');
             
         } catch (error) {

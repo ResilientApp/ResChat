@@ -55,20 +55,24 @@ def clear_cache():
 def download_avatar(friend_list: {}, username=None) -> {}:
     try:
         from ipfs import download_file_from_ipfs
+        paths = ["profile_pictures/", "../frontend/public/profile_pictures/"]
+        
         if username is None:
             for user in friend_list:
                 avatar_cid = friend_list[user]["avatar_cid"]
                 if avatar_cid == "":
                     continue
-                avatar_path = "profile_pictures/" + avatar_cid + ".jpg"
-                if not os.path.exists(avatar_path):
-                    download_file_from_ipfs(avatar_cid, avatar_path)
+                for path in paths:
+                    avatar_path = path + avatar_cid + ".jpg"
+                    if not os.path.exists(avatar_path):
+                        download_file_from_ipfs(avatar_cid, avatar_path)
         else:
             avatar_cid = friend_list[username]["avatar_cid"]
-            avatar_path = "profile_pictures/" + avatar_cid + ".jpg"
-            if not os.path.exists(avatar_path):
-                download_file_from_ipfs(avatar_cid, avatar_path)
-        return {"result": True, "message": "Avatar(s) has been downloaded."}
+            for path in paths:
+                avatar_path = path + avatar_cid + ".jpg"
+                if not os.path.exists(avatar_path):
+                    download_file_from_ipfs(avatar_cid, avatar_path)
+        return {"result": True, "message": "Avatar(s) has been downloaded.", "user_cid":avatar_cid}
     except Exception as e:
         return {"result": False, "message": str(e)}
 

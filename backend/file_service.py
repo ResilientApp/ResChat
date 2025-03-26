@@ -1,12 +1,11 @@
 import os
-import logging
+from helper import write_log
 import uuid
 from pathlib import Path
 from typing import Union, Optional, Tuple
 import secrets
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+
 SAVE_DIR = "temp_files/"
 try:
     import aiofiles
@@ -30,30 +29,30 @@ async def handle_temporary_file_upload(content: bytes, filename:str, mode: str =
             with open(file_path, mode='wb') as f:
                  f.write(content)
 
-        logger.info(f"File saved successfully at {file_path}")
+        write_log(f"File saved successfully at {file_path}")
         return unique_filename, str(file_path)
     except OSError as e:
         logger.error(f"OS error saving file '{filename}' as '{unique_filename}': {e}", exc_info=True)
         if 'file_path' in locals() and os.path.exists(file_path):
             try:
                 os.remove(file_path)
-                logger.info(f"Cleaned up partially written file: {file_path}")
+                write_log(f"Cleaned up partially written file: {file_path}")
             except OSError as cleanup_e:
-                logger.error(f"Error cleaning up file {file_path} after save error: {cleanup_e}")
+                write_log(f"Error cleaning up file {file_path} after save error: {cleanup_e}")
         return None
     except Exception as e:
-        logger.error(f"Unexpected error saving file '{filename}': {e}", exc_info=True)
+        write_log(f"Unexpected error saving file '{filename}': {e}", exc_info=True)
         return None
 
 def delete_temporary_file(file_name : str):
     file_path = SAVE_DIR+file_name
     try:
         os.remove(file_path)
-        logger.info(f"Successfully deleted {file_path}")
+        write_log(f"Successfully deleted {file_path}")
         return {"result" : True, "message" : "Temp File successfully deleted."}
     except FileNotFoundError:
-        logger.warning(f"File {file_path} not found during deletion")
+        write_log(f"File {file_path} not found during deletion")
         return {"result" : False, "message" : f"File {file_path} not found during deletion"}
     except Exception as e:
-                logger.error(f"Error deleting file {file_path}: {e}")
+                write_log(f"Error deleting file {file_path}: {e}")
                 return {"result" : False, "message" : f"Error deleting file {file_path}: {e}"}

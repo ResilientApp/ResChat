@@ -11,6 +11,7 @@ import shutil
 from page import *
 import Crypto
 from Crypto.PublicKey import RSA
+from helper import write_log_client
 
 """Global Variables"""
 """
@@ -120,6 +121,7 @@ def select_friend(target_username: str) -> {}:
     current_chatting_friend_public_key =  string_to_public_key(get_kv(target_username))
     current_chatting_page_name = combine_string_in_ascii(my_username, target_username)
     current_chatting_page_number = int(get_kv(current_chatting_page_name + " PAGE_NUM"))
+    write_log_client('aaaa', current_chatting_page_number)
     current_chat_previous_page_number = current_chatting_page_number - 2
     return
 
@@ -359,6 +361,7 @@ def initial_load_chat_history():
     global current_chat_history
     current_chat_history = {}
     # get page number
+    write_log_client("Claled initial load chat")
     page_number = int(get_kv(current_chatting_page_name + " PAGE_NUM"))
 
     current_page_list = []

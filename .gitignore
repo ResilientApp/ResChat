@@ -24,3 +24,5 @@ tests/log.txt
 *.jpg
 log.txt
 uploads/
+temp_files/
+client_log.txt

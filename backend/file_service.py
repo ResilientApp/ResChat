@@ -32,7 +32,7 @@ async def handle_temporary_file_upload(content: bytes, filename:str, mode: str =
         write_log(f"File saved successfully at {file_path}")
         return unique_filename, str(file_path)
     except OSError as e:
-        logger.error(f"OS error saving file '{filename}' as '{unique_filename}': {e}", exc_info=True)
+        write_log(f"OS error saving file '{filename}' as '{unique_filename}': {e}", exc_info=True)
         if 'file_path' in locals() and os.path.exists(file_path):
             try:
                 os.remove(file_path)

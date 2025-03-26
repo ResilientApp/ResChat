@@ -2,7 +2,7 @@
 This file contains all function needed for the fronted
 """
 from datetime import datetime
-from backend.helper import combine_string_in_ascii, download_avatar
+from backend.helper import combine_string_in_ascii, download_avatar, string_to_file_message_dict
 from backend.page import from_string
 from crypto_service import *
 from user import *
@@ -121,7 +121,6 @@ def select_friend(target_username: str) -> {}:
     current_chatting_friend_public_key =  string_to_public_key(get_kv(target_username))
     current_chatting_page_name = combine_string_in_ascii(my_username, target_username)
     current_chatting_page_number = int(get_kv(current_chatting_page_name + " PAGE_NUM"))
-    write_log_client('aaaa', current_chatting_page_number)
     current_chat_previous_page_number = current_chatting_page_number - 2
     return
 
@@ -242,19 +241,20 @@ def send_file(file_path: str):
 
     # Get current page and convert it into Page()
     try:
-        page = get_kv(current_chatting_page_name + " " + str(page_number))
+        page_string = get_kv(current_chatting_page_name + " " + str(page_number))
     except Exception as e:
         page = Page()
 
     # Sort page
+    page = from_string(page_string)
     page.sort_by_time()
 
     # Check if the page is full
     # Page is not full
     if not page.is_full():
         page.add_message(my_username, "FILE", datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                         {"file_size": 123, "file_name": os.path.basename(), "cid": cid},
-                         encrypted_aes_key_sender, encrypted_aes_key_receiver)
+                         {"file_size": 123, "file_name": os.path.basename(file_path), "cid": cid}
+                         ,encrypted_aes_key_sender, encrypted_aes_key_receiver)
     else:
         # Create new page
         page = Page()
@@ -265,7 +265,7 @@ def send_file(file_path: str):
 
         # Add message into page
         page.add_message(my_username, "FILE", datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                         {"file_size": 123, "file_name": os.path.basename(), "cid": cid},
+                         {"file_size": 123, "file_name": os.path.basename(file_path), "cid": cid},
                          encrypted_aes_key_sender, encrypted_aes_key_receiver)
 
     # Send page
@@ -375,7 +375,7 @@ def initial_load_chat_history():
             sender = (message[0] == my_username)
 
             if message[1] == "FILE":
-                file_info = message[3]
+                file_info = string_to_file_message_dict(message[3])
                 encrypted_aes_key = message[4] if sender else message[5]
                 file_info["key"] = decrypt_aes_key_with_rsa(encrypted_aes_key, my_private_key)
                 current_page_list.append({"sender": sender, "message_type": "FILE", "time_stamp": message[2],

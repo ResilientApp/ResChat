@@ -72,7 +72,7 @@ const MessageInput = ({ value, onChange, onKeyPress, onSend, setOpenPicker, inpu
       
       if (uploadResponse.result) {
         // Then send the file using the temporary path
-        const sendResponse = await sendFile(uploadResponse.file_path);
+        const sendResponse = await sendFile(uploadResponse.temp_file_path);
         
         if (sendResponse.result) {
           dispatch(showNotification({

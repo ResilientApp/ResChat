@@ -95,7 +95,19 @@ def download_avatar(friend_list: {}, username=None) -> {}:
         return {"result": True, "message": "Avatar(s) has been downloaded.", "user_cid":avatar_cid}
     except Exception as e:
         return {"result": False, "message": str(e)}
-
+def string_to_file_message_dict(message_str: str) -> dict:
+    """Convert string back to message dictionary"""
+    try:
+        file_size, file_name, cid = message_str.split(',')
+        file_size = file_size.strip("{}").split(':')[1].strip()
+        cid = cid.strip("{}").split(':')[1].strip().strip("'")
+        return {
+            "file_size": int(file_size),
+            "file_name": file_name,
+            "cid": cid
+        }
+    except (ValueError, IndexError) as e:
+        raise ValueError(f"Invalid message format: {message_str}")
 
 
 

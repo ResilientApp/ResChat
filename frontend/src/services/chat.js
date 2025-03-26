@@ -118,13 +118,13 @@ export const uploadFile = async (file) => {
   try {
     const formData = new FormData();
     formData.append('file', file);
-    
+    console.log("Sedning file to temp uplaod")
     const response = await axios.post('/upload_temp_file', formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }
     });
-    
+    console.log('Temp File Upload Successfull', response.data)
     return response.data;
   } catch (error) {
     console.error('Error uploading file:', error);

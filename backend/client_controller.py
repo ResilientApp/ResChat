@@ -10,12 +10,15 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import client
 from friend_list import *
+import file_service
 
 
 UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 def run_sync(func, *args, **kwargs):
+    if asyncio.iscoroutinefunction(func):
+        return asyncio.ensure_future(func(*args, **kwargs))
     return asyncio.get_event_loop().run_in_executor(None, lambda: func(*args, **kwargs))
 
 async def welcome_handler(request):
@@ -131,6 +134,47 @@ async def get_friend_list_handler(request):
     friend_list_res = load_my_friend_list(client.my_username)
     return web.json_response({"result": True, "friend_list": friend_list_res})
 
+async def temp_file_upload_handler(request):
+    try:
+        reader = await request.multipart()
+        field = await reader.next()
+
+        if not field or not hasattr(field, 'filename') or not field.filename:
+            return web.json_response(
+                {"error": "File field 'file' with a filename missing in upload"},
+                status=400
+            )
+        
+        original_filename = field.filename
+        file_content = bytearray()
+        while True:
+            chunk = await field.read_chunk(size=8192)
+            if not chunk:
+                break
+            file_content.extend(chunk)
+
+        if not file_content:
+             return web.json_response({"error": "Received empty file"}, status=400)
+        
+        save_result = await run_sync(file_service.handle_temporary_file_upload, file_content, original_filename)
+        if save_result:
+            unique_filename, temp_file_path = save_result
+            return web.json_response({"result" : True, "temp_file_path" : temp_file_path,
+                                       "unique_filename":unique_filename,"orignal_file_name":original_filename})
+        else:
+            return web.json_response({"error": "Failed to save uploaded file."}, status=500)
+    except Exception as e:
+        return web.Response(text=e, status=500)
+    
+async def delete_file_handler(request):
+    unique_filename = request.match_info.get('filename')
+    if not unique_filename:
+        return web.json_response({"error": "Filename parameter missing."}, status=400)
+    delete_result = await run_sync(file_service.delete_temporary_file, unique_filename)
+
+    return web.json_response(delete_result)
+    
+
 app = web.Application()
 
 # Setup CORS
@@ -159,7 +203,9 @@ routes = [
     web.get('/initial_load_chat_history', initial_load_handler),
     web.get('/load_previous_chat_history', load_previous_handler),
     web.post('/download_file', download_file_handler),
-    web.get('/get_friend_list', get_friend_list_handler)
+    web.get('/get_friend_list', get_friend_list_handler),
+    web.post('/upload_temp_file', temp_file_upload_handler),
+    web.delete('/delete_temp_file/{filename}', delete_file_handler)
 ]
 
 for route in routes:

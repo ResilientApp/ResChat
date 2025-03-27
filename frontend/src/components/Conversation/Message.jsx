@@ -7,12 +7,14 @@ import {
   IconButton, 
   Menu, 
   MenuItem, 
-  Divider,
+  Button,
+  Tooltip,
   Link,
   Paper
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { useSelector } from 'react-redux';
+import { GetApp, PictureAsPdf, Description, TableChart, Image, InsertDriveFile } from '@mui/icons-material';
 import { DotsThreeVertical, DownloadSimple, Copy } from 'phosphor-react';
 import { format } from 'date-fns';
 import { downloadFile } from '../../services/chat';
@@ -55,7 +57,7 @@ const Message = ({ messages }) => {
         // Ask user for download location
         // For now, we're using a fixed path - this would ideally use a file dialog
         const defaultPath = `/home/downloads/${selectedMessage.message.file_name}`;
-        
+        console.log("FIle Info", selectedMessage.message)
         const response = await downloadFile(defaultPath, selectedMessage.message);
         if (response.result) {
           console.log('File downloaded successfully:', response.message);
@@ -81,12 +83,32 @@ const Message = ({ messages }) => {
       return timestamp;
     }
   };
+  const getFileIcon = (fileName) => {
+    const extension = fileName.split('.').pop().toLowerCase();
+    switch (extension) {
+      case 'pdf':
+        return <PictureAsPdf />;
+      case 'doc':
+      case 'docx':
+        return <Description />;
+      case 'xls':
+      case 'xlsx':
+        return <TableChart />;
+      case 'jpg':
+      case 'jpeg':
+      case 'png':
+      case 'gif':
+        return <Image />;
+      default:
+        return <InsertDriveFile />;
+    }
+  };
   
   return (
     <Box p={3}>
       <Stack spacing={3}>
         {messages.map((msg, index) => {
-          console.log('Processing message:', msg);
+          
           
           // Handle various ways the sender flag might be represented
           const isSender = 
@@ -95,13 +117,7 @@ const Message = ({ messages }) => {
             msg.sender === 1 || 
             msg.sender === '1';
           
-          // Log for debugging
-          console.log(
-            `Message: "${msg.message_type === 'TEXT' ? msg.message : '[FILE]'}", ` +
-            `Sender flag (${typeof msg.sender}): ${JSON.stringify(msg.sender)}, ` +
-            `isSender: ${isSender}, ` +
-            `Time: ${msg.time_stamp}`
-          );
+          
           
           return (
             <Stack 
@@ -142,29 +158,36 @@ const Message = ({ messages }) => {
                   
                   {/* File message */}
                   {msg.message_type === 'FILE' && (
-                    <Stack spacing={1}>
-                      <Typography variant="body1" fontWeight="bold">
-                        {msg.message.file_name}
-                      </Typography>
-                      <Typography variant="body2">
-                        Size: {(msg.message.file_size / 1024).toFixed(2)} KB
-                      </Typography>
-                      <Box 
-                        component={Link} 
-                        onClick={() => {
-                          setSelectedMessage(msg);
-                          handleDownloadFile();
-                        }}
-                        sx={{ 
-                          cursor: 'pointer',
-                          color: isSender ? 'inherit' : theme.palette.primary.main,
-                          display: 'flex',
-                          alignItems: 'center'
-                        }}
-                      >
-                        <DownloadSimple size={20} style={{ marginRight: 4 }} />
-                        Download
-                      </Box>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      {getFileIcon(msg.message.file_name)}
+                      <Stack direction="column" sx={{ flexGrow: 1, minWidth: 0 }}>
+                        <Typography
+                          variant="body1"
+                          fontWeight="bold"
+                          sx={{
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                          }}
+                        >
+                          {msg.message.file_name}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Size: {(msg.message.file_size / 1024).toFixed(2)} KB
+                        </Typography>
+                      </Stack>
+                      <Tooltip title="Download">
+                        <IconButton
+                          onClick={() => {
+                            setSelectedMessage(msg);
+                            handleDownloadFile();
+                          }}
+                          color={isSender ? 'inherit' : 'primary'}
+                          aria-label="download file"
+                        >
+                          <GetApp />
+                        </IconButton>
+                      </Tooltip>
                     </Stack>
                   )}
                   

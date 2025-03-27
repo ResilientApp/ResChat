@@ -18,9 +18,8 @@ async def handle_temporary_file_upload(content: bytes, filename:str, mode: str =
     try:
         save_dir_path = Path(SAVE_DIR)
         save_dir_path.mkdir(parents=True, exist_ok=True)
-        _, file_extension = os.path.splitext(filename) if filename else ("", ".dat")
-        unique_filename = f"{secrets.token_urlsafe(16)}{file_extension}"
-        file_path = save_dir_path / unique_filename
+
+        file_path = get_unique_file_path(save_dir_path , filename)
         if AIOFILES_AVAILABLE:
             async with aiofiles.open(file_path, mode='wb') as f:
                 await f.write(content)
@@ -30,9 +29,9 @@ async def handle_temporary_file_upload(content: bytes, filename:str, mode: str =
                  f.write(content)
 
         write_log(f"File saved successfully at {file_path}")
-        return unique_filename, str(file_path)
+        return filename, str(file_path)
     except OSError as e:
-        write_log(f"OS error saving file '{filename}' as '{unique_filename}': {e}", exc_info=True)
+        write_log(f"OS error saving file '{filename}' as '{file_path}': {e}", exc_info=True)
         if 'file_path' in locals() and os.path.exists(file_path):
             try:
                 os.remove(file_path)
@@ -56,3 +55,23 @@ def delete_temporary_file(file_name : str):
     except Exception as e:
                 write_log(f"Error deleting file {file_path}: {e}")
                 return {"result" : False, "message" : f"Error deleting file {file_path}: {e}"}
+    
+def get_unique_file_path(save_dir_path, filename):
+    """
+    Ensure the file path is unique by appending a number (1), (2), etc., if the file already exists.
+    """
+    save_dir_path = Path(save_dir_path)
+    file_path = save_dir_path / filename
+
+    if not file_path.exists():
+        return file_path
+
+    name, ext = os.path.splitext(filename)
+    counter = 1
+
+    while file_path.exists():
+        new_filename = f"{name}({counter}){ext}"
+        file_path = save_dir_path / new_filename
+        counter += 1
+
+    return file_path

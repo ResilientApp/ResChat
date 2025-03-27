@@ -294,9 +294,7 @@ const Conversation = () => {
     lastMessageCountRef.current = messageCount;
   }, [chatHistory, loadingMore]);
 
-  // Log the raw chat history
-  console.log('Raw chat history:', chatHistory);
-  
+
   // Format chat history into a flat array for rendering
   // Use a try/catch to handle any unexpected issues
   let messages = [];
@@ -306,7 +304,6 @@ const Conversation = () => {
       .sort(([pageNumA], [pageNumB]) => parseInt(pageNumA) - parseInt(pageNumB))
       // Extract messages from each page and flatten into single array
       .flatMap(([pageNum, msgs]) => {
-        console.log(`Page ${pageNum} messages:`, msgs);
         // Handle null, undefined, or non-array values safely
         if (!msgs || !Array.isArray(msgs)) {
           console.warn(`Page ${pageNum} has invalid messages format:`, msgs);
@@ -319,8 +316,6 @@ const Conversation = () => {
     messages = [];
   }
   
-  console.log('Processed messages for rendering:', messages, 'Total count:', messages.length);
-
   return (
     <Stack height={'100%'} maxHeight={'100vh'} width={'auto'}>
       {/* Chat header */}

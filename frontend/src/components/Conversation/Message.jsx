@@ -56,7 +56,7 @@ const Message = ({ messages }) => {
       try {
         // Ask user for download location
         // For now, we're using a fixed path - this would ideally use a file dialog
-        const defaultPath = `/home/downloads/${selectedMessage.message.file_name}`;
+        const defaultPath = `Downloads/${selectedMessage.message.file_name}`;
         console.log("FIle Info", selectedMessage.message)
         const response = await downloadFile(defaultPath, selectedMessage.message);
         if (response.result) {

@@ -233,6 +233,9 @@ def decrypt_file_with_aes(encrypted_file_path: str, aes_key: str, output_path):
         return {"result": False, "message": f"{encrypted_file_path} does not exists"}
 
     # Decrypt file
+    if not os.path.exists(output_path):
+        with open(output_path, 'wb') as f:
+            pass
     res = pybind_aes.aes_decrypt_file(encrypted_file_path, output_path, aes_key)
 
     if res:

@@ -12,6 +12,7 @@ from page import *
 import Crypto
 from Crypto.PublicKey import RSA
 from helper import write_log_client
+from file_service import get_file_size_in_kb
 
 """Global Variables"""
 """
@@ -251,9 +252,10 @@ def send_file(file_path: str):
 
     # Check if the page is full
     # Page is not full
+    size_in_kb = get_file_size_in_kb(file_path)
     if not page.is_full():
         page.add_message(my_username, "FILE", datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                         {"file_size": 123, "file_name": os.path.basename(file_path), "cid": cid}
+                         {"file_size": size_in_kb, "file_name": os.path.basename(file_path), "cid": cid}
                          ,encrypted_aes_key_sender, encrypted_aes_key_receiver)
     else:
         # Create new page
@@ -265,7 +267,7 @@ def send_file(file_path: str):
 
         # Add message into page
         page.add_message(my_username, "FILE", datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                         {"file_size": 123, "file_name": os.path.basename(file_path), "cid": cid},
+                         {"file_size": size_in_kb, "file_name": os.path.basename(file_path), "cid": cid},
                          encrypted_aes_key_sender, encrypted_aes_key_receiver)
 
     # Send page
@@ -331,7 +333,7 @@ def update_chat_history():
                         tmp_list.insert(0, {"sender": sender, "message_type": "TEXT", "time_stamp": message[2], "message": decrypted_message})
                     i -= 1
 
-            current_chat_history[page_number - 1].extend(tmp_list)
+            current_chat_history.setdefault(page_number - 1, []).extend(tmp_list)
 
     # Check for new messages
     if current_chat_history[page_number] and all_messages[-1][2] != current_chat_history[page_number][-1]["time_stamp"]:
@@ -397,9 +399,10 @@ def initial_load_chat_history():
             sender = (message[0] == my_username)
 
             if message[1] == "FILE":
-                file_info = message[3]
+                file_info = string_to_file_message_dict(message[3])
                 encrypted_aes_key = message[4] if sender else message[5]
-                file_info["key"] = decrypt_aes_key_with_rsa(encrypted_aes_key, my_private_key)
+                just_a_val = decrypt_aes_key_with_rsa(encrypted_aes_key, my_private_key)
+                file_info["key"] = just_a_val
                 previous_page_list.append({"sender": sender, "message_type": "FILE", "time_stamp": message[2],
                                     "message": file_info})
 
@@ -408,7 +411,7 @@ def initial_load_chat_history():
                 decrypted_message = decrypt_text_with_aes(message[3],
                                                           decrypt_aes_key_with_rsa(encrypted_aes_key, my_private_key))
                 previous_page_list.append({"sender": sender, "message_type": "TEXT", "time_stamp": message[2],
-                                    "message": decrypted_message})
+                                     "message": decrypted_message})
         current_chat_history[page_number - 1] = previous_page_list
     return current_chat_history
 

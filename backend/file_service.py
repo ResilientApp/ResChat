@@ -75,3 +75,6 @@ def get_unique_file_path(save_dir_path, filename):
         counter += 1
 
     return file_path
+
+def get_file_size_in_kb(file_path):
+    return os.path.getsize(file_path) / 1024.0

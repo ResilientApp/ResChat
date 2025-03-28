@@ -103,7 +103,7 @@ def string_to_file_message_dict(message_str: str) -> dict:
         file_name = file_name.split("'file_name': '")[-1].split("'")[0]
         cid = cid.strip("{}").split(':')[1].strip().strip("'")
         return {
-            "file_size": int(file_size),
+            "file_size": int(float(file_size)),
             "file_name": file_name,
             "cid": cid
         }

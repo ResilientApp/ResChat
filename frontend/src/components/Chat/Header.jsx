@@ -117,7 +117,7 @@ const ChatHeader = () => {
             >
               <Avatar 
                 alt={displayName} 
-                src={avatarCid ? `http://localhost:8080/ipfs/${avatarCid}` : null} 
+                src={avatarCid ? `profile_pictures/${info.avatar_cid}.jpg` : null} 
               />
             </StyledBadge>
           </Box>

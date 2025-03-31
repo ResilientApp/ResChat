@@ -3,7 +3,7 @@ import * as Yup from 'yup';
 import { useForm } from 'react-hook-form';
 import FormProvider from '../../components/hook-form/FormProvider'
 import { yupResolver } from "@hookform/resolvers/yup";
-import { Alert, Button, IconButton, InputAdornment, Link, Stack } from '@mui/material';
+import { Alert, Button, IconButton, InputAdornment, Box, Stack } from '@mui/material';
 import { RHFTextField } from '../../components/hook-form';
 import { Eye, EyeSlash } from 'phosphor-react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
@@ -48,7 +48,7 @@ const LoginForm = () => {
             console.log("Login response:", result);
 
             if (!result.result) {
-                throw new Error(result.message || 'Login failed');
+                throw new Error('Login failed');
             }
             console.log("Action setting username", data.email)
             localStorage.setItem('username',data.email)
@@ -65,36 +65,47 @@ const LoginForm = () => {
         }
    }
 
-  return (
+return (
     <FormProvider methods={methods} onSubmit={handleSubmit(onSubmit)}>
         <Stack spacing={3}>
-            {!!errors.afterSubmit && <Alert severity='error'>{errors.afterSubmit.message}</Alert>}
-        
-        <RHFTextField name='email' label='Username'/>
-        <RHFTextField name='password' label='Password' type={showPassword ? 'text' : 'password'}
-        InputProps={{endAdornment:(
-            <InputAdornment position="end">
-            <IconButton onClick={()=>{
-                setShowPassword(!showPassword);
-            }}>
-                {showPassword ? <Eye/>: <EyeSlash/>}
-            </IconButton>
-            </InputAdornment>
-        )}}/>
+            {!!errors.afterSubmit && <Alert severity="error">{errors.afterSubmit.message}</Alert>}
+            <RHFTextField name="email" label="Username" />
+            <RHFTextField
+                name="password"
+                label="Password"
+                type={showPassword ? 'text' : 'password'}
+                InputProps={{
+                    endAdornment: (
+                        <InputAdornment position="end">
+                            <IconButton onClick={() => setShowPassword(!showPassword)}>
+                                {showPassword ? <Eye /> : <EyeSlash />}
+                            </IconButton>
+                        </InputAdornment>
+                    )
+                }}
+            />
         </Stack>
-        <Stack alignItems={'flex-end'} sx={{my:2}}>
-            <Link component={RouterLink} to='/auth/reset-password'
-             variant='body2' color='inherit' underline='always'>Forgot Password?</Link>
-        </Stack>
-        <Button fullWidth color='inherit' size='large' type='submit' variant='contained'
-        sx={{bgcolor:'text.primary', color:(theme)=> theme.palette.mode === 'light' ?
-         'common.white':'grey.800',
-         '&:hover':{
-            bgcolor:'text.primary',
-            color:(theme)=> theme.palette.mode === 'light' ? 'common.white':'grey.800',
-         }}}>Login</Button>
+        <Box mt={3}>
+            <Button
+                fullWidth
+                color="inherit"
+                size="large"
+                type="submit"
+                variant="contained"
+                sx={{
+                    bgcolor: 'text.primary',
+                    color: (theme) => theme.palette.mode === 'light' ? 'common.white' : 'grey.800',
+                    '&:hover': {
+                        bgcolor: 'text.primary',
+                        color: (theme) => theme.palette.mode === 'light' ? 'common.white' : 'grey.800',
+                    }
+                }}
+            >
+                Login
+            </Button>
+        </Box>
     </FormProvider>
-  )
+)
 }
 
 export default LoginForm

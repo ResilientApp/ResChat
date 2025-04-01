@@ -130,7 +130,7 @@ const Message = ({ messages }) => {
               {/* Avatar for received messages */}
               {!isSender && (
                 <Avatar 
-                  src={friendInfo?.avatar_cid ? `profile_pictures/${info.avatar_cid}.jpg` : null}
+                  src={friendInfo?.avatar_cid ? `profile_pictures/${friendInfo.avatar_cid}.jpg` : null}
                   alt={friendInfo?.nick_name || selectedFriend}
                   sx={{ width: 32, height: 32 }}
                 />

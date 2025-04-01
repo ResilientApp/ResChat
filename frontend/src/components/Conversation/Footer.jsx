@@ -52,45 +52,17 @@ const FilePreview = styled(Box)(({ theme }) => ({
   maxWidth: '200px',
 }));
 
-const MessageInput = ({ value, onChange, onKeyPress, onSend, setOpenPicker, inputRef }) => {
+const MessageInput = ({ value, onChange, onKeyPress, onSend, setOpenPicker, inputRef, setSelectedFile }) => {
   const [openAction, setOpenAction] = useState(false);
   const fileInputRef = useRef(null);
   const dispatch = useDispatch();
   
   const handleFileSelect = (event) => {
-    const selectedFile = event.target.files[0];
-    if (selectedFile) {
-      // Logic to handle the selected file
-      handleFileUpload(selectedFile);
-    }
-  };
-  
-  const handleFileUpload = async (file) => {
-    try {
-      // First upload the file to get a temporary path
-      const uploadResponse = await uploadFile(file);
-      
-      if (uploadResponse.result) {
-        // Then send the file using the temporary path
-        const sendResponse = await sendFile(uploadResponse.temp_file_path);
-        
-        if (sendResponse.result) {
-          dispatch(showNotification({
-            message: 'File sent successfully',
-            type: 'success'
-          }));
-        } else {
-          throw new Error(sendResponse.message || 'Failed to send file');
-        }
-      } else {
-        throw new Error(uploadResponse.message || 'Failed to upload file');
-      }
-    } catch (error) {
-      console.error('Error sending file:', error);
-      dispatch(showNotification({
-        message: error.message || 'Failed to send file',
-        type: 'error'
-      }));
+    console.log("triggered handleFileSelect");
+    const selectedFile1 = event.target.files[0];
+    if (selectedFile1) {
+      setSelectedFile(selectedFile1);
+      console.log("File selected:", selectedFile1);
     }
   };
   
@@ -196,11 +168,11 @@ const Footer = () => {
   const [openPicker, setOpenPicker] = useState(false);
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
   const { selectedFriend, chatHistory } = useSelector((state) => state.app);
   const inputRef = useRef(null);
   const chatHistoryRef = useRef(chatHistory);
   
-  // Update chatHistoryRef when chatHistory changes
   useEffect(() => {
     chatHistoryRef.current = chatHistory;
   }, [chatHistory]);
@@ -220,15 +192,40 @@ const Footer = () => {
       handleSendMessage();
     }
   };
+  const handleFileUpload = async (file) => {
+    try {
+      const uploadResponse = await uploadFile(file);
+      
+      if (uploadResponse.result) {
+        const sendResponse = await sendFile(uploadResponse.temp_file_path);
+        
+        if (sendResponse.result) {
+          dispatch(showNotification({
+            message: 'File sent successfully',
+            type: 'success'
+          }));
+        } else {
+          throw new Error(sendResponse.message || 'Failed to send file');
+        }
+      } else {
+        throw new Error(uploadResponse.message || 'Failed to upload file');
+      }
+    } catch (error) {
+      console.error('Error sending file:', error);
+      dispatch(showNotification({
+        message: error.message || 'Failed to send file',
+        type: 'error'
+      }));
+    }
+  };
   
   const handleSendMessage = async () => {
-    if (!message.trim() || !selectedFriend || sending) return;
+    if ((!message.trim() && !selectedFile) || !selectedFriend || sending) return;
     
     setSending(true);
     const messageToSend = message.trim();
     
     try {
-      // FIRST: Create an optimistic update with a temporary message object
       const tempMessage = {
         sender: true,
         message_type: 'TEXT',
@@ -236,32 +233,30 @@ const Footer = () => {
         time_stamp: new Date().toISOString()
       };
       
-      // Use the chatHistoryRef to access the current chat history
       const currentChatHistory = chatHistoryRef.current || {};
       const pageNumbers = Object.keys(currentChatHistory).map(Number);
       const latestPageNumber = pageNumbers.length > 0 ? Math.max(...pageNumbers) : 1;
       
-      // Optimistically add message to UI
       console.log('Adding optimistic message update:', tempMessage);
       dispatch(addMessage({
         pageNumber: latestPageNumber,
         message: tempMessage
       }));
       
-      // Clear input immediately for better UX
       setMessage('');
       
-      // SECOND: Actually send the message to the server
       console.log('Sending message to server:', messageToSend);
       const response = await sendTextMessage(messageToSend);
+      if (selectedFile !== null) {
+        console.log("File detected, sending file...", selectedFile);
+        await handleFileUpload(selectedFile);
+      } 
       console.log('Server response:', response);
       
       if (response.result) {
-        // Load the messages using loadPreviousChatHistory API
         try {
           console.log('Message sent successfully, loading updated messages...');
           
-          // First load using the suggested API
           const historyResponse = await loadPreviousChatHistory();
           
           if (historyResponse.result && historyResponse.chat_history) {
@@ -270,17 +265,14 @@ const Footer = () => {
           } else {
             console.error('Failed to load messages after sending:', historyResponse.message);
             
-            // Fallback to the server response if available
             if (response.chat_history) {
               console.log('Using response.chat_history as fallback:', response.chat_history);
               dispatch(setChatHistory(response.chat_history));
             }
           }
           
-          // Load more messages using the API directly
           console.log('Scheduling follow-up message loads');
           
-          // Schedule follow-up message loads
           setTimeout(async () => {
             try {
               const followupResponse = await loadPreviousChatHistory();
@@ -294,7 +286,6 @@ const Footer = () => {
         } catch (error) {
           console.error('Error loading messages after sending:', error);
           
-          // Fallback to the server response if available
           if (response.chat_history) {
             dispatch(setChatHistory(response.chat_history));
           }
@@ -304,16 +295,15 @@ const Footer = () => {
       }
     } catch (error) {
       console.error('Error sending message:', error);
-      // Show error notification
       dispatch(showNotification({
         message: error.message || 'Failed to send message',
         type: 'error'
       }));
       
-      // Restore message to input if it failed
       setMessage(messageToSend);
     } finally {
       setSending(false);
+      setSelectedFile(null);
     }
   };
   
@@ -351,6 +341,7 @@ const Footer = () => {
             onSend={handleSendMessage}
             setOpenPicker={setOpenPicker}
             inputRef={inputRef}
+            setSelectedFile={setSelectedFile}
           />
         </Stack>
         
@@ -369,7 +360,7 @@ const Footer = () => {
           }}>
             <IconButton 
               onClick={handleSendMessage}
-              disabled={!message.trim() || sending}
+              disabled={!message.trim() && !selectedFile || sending}
             >
               {sending ? (
                 <CircularProgress size={24} color="inherit" />

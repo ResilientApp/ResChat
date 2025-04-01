@@ -75,32 +75,11 @@ const MessageInput = ({ value, onChange, onKeyPress, onSend, setOpenPicker, inpu
       onClick: () => fileInputRef.current?.click()
     },
     {
-      color: '#1b8cfe',
-      icon: <Sticker size={24} />,
-      y: 172,
-      title: 'Sticker',
-      onClick: () => {}
-    },
-    {
-      color: '#0172e4',
-      icon: <Camera size={24} />,
-      y: 242,
-      title: 'Camera',
-      onClick: () => {}
-    },
-    {
       color: '#0159b2',
       icon: <FileIcon size={24} />,
-      y: 312,
+      y: 172,
       title: 'Document',
       onClick: () => fileInputRef.current?.click()
-    },
-    {
-      color: '#013f7f',
-      icon: <User size={24} />,
-      y: 382,
-      title: 'Contact',
-      onClick: () => {}
     }
   ];
   

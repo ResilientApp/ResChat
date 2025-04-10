@@ -4,3 +4,7 @@ ipfs:
     host: 104.49.216.116
     gateway-port: 8080
     cluster-port: 9094
+
+resilientdb:
+  kv-service:
+    host: https://cloud.resilientdb.com/graphql

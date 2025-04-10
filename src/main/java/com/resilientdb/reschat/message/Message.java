@@ -25,7 +25,7 @@ public class Message {
         this.senderUsername = senderUsername;
         this.utcTimeStamp = convertToUtc(localTime, userTimeZone);
         this.textMessage = textMessage;
-        this.message = message;
+        this.message = message; // If this is a file, it should be a JSON string
         this.encryptedAesKeySender = encryptedAesKeySender;
         this.encryptedAesKeyReceiver = encryptedAesKeyReceiver;
     }

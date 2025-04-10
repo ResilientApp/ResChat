@@ -1,0 +1,6 @@
+ipfs:
+  cluster:
+    protocol: http
+    host: 104.49.216.116
+    gateway-port: 8080
+    cluster-port: 9094

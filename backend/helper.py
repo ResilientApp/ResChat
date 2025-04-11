@@ -3,7 +3,7 @@ import inspect
 from fileinput import filename
 import os
 from textwrap import indent
-
+from RSDB_kv_service import get_kv
 
 
 def combine_string_in_ascii(str1: str, str2: str) -> str:
@@ -76,7 +76,7 @@ def download_avatar(friend_list: {}, username=None) -> {}:
     try:
         from ipfs import download_file_from_ipfs
         paths = ["profile_pictures/", "../frontend/public/profile_pictures/"]
-        
+        avatar_cid = ""
         if username is None:
             for user in friend_list:
                 avatar_cid = friend_list[user]["avatar_cid"]
@@ -87,12 +87,21 @@ def download_avatar(friend_list: {}, username=None) -> {}:
                     if not os.path.exists(avatar_path):
                         download_file_from_ipfs(avatar_cid, avatar_path)
         else:
-            avatar_cid = friend_list[username]["avatar_cid"]
-            for path in paths:
-                avatar_path = path + avatar_cid + ".jpg"
-                if not os.path.exists(avatar_path):
-                    download_file_from_ipfs(avatar_cid, avatar_path)
-        return {"result": True, "message": "Avatar(s) has been downloaded.", "user_cid":avatar_cid}
+            if username in friend_list:
+                avatar_cid = friend_list[username]["avatar_cid"]
+                for path in paths:
+                    avatar_path = path + avatar_cid + ".jpg"
+                    if not os.path.exists(avatar_path):
+                        download_file_from_ipfs(avatar_cid, avatar_path)
+                    
+            user_cid = get_kv(username + " AVATAR")
+            if user_cid:
+                for path in paths:
+                    user_avatar_path = path + user_cid + ".jpg"
+                    if not os.path.exists(user_avatar_path):
+                        download_file_from_ipfs(user_cid, user_avatar_path)
+        
+        return {"result": True, "message": "Avatar(s) has been downloaded.", "user_cid":user_cid}
     except Exception as e:
         return {"result": False, "message": str(e)}
 def string_to_file_message_dict(message_str: str) -> dict:

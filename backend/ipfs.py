@@ -35,9 +35,12 @@ def add_file_to_cluster(file_path):
     response = requests.post(url, files=files)
     write_log(f"Uploading {os.path.basename(file_path)} to IPFS")
     if response.status_code == 200:
-        cid = response.json()['cid']
         write_log(f"{os.path.basename(file_path)} Uploaded successfully")
-        return cid
+        cid = response.json()['cid']
+        if type(cid) is dict:
+            return cid['/']
+        else:
+            return cid
     else:
         write_log(f"fail to upload {os.path.basename(file_path)}, with {response.text} error message from IPFS")
         return None
@@ -93,3 +96,5 @@ def download_file_from_ipfs(cid, save_path):
         return {"success": False, "message": error_message}
 
 # QmZCG1a88VCF2Vbej5iijQ8PvURupnetPytLkvTgEyUrhw
+print("jeeee")
+print(add_file_to_cluster("log.txt"))

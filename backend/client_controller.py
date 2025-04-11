@@ -1,10 +1,8 @@
 import asyncio
 from aiohttp import web
 from aiohttp_cors import setup as cors_setup, ResourceOptions
-import json
 import sys
 import os
-import aiohttp
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -12,6 +10,8 @@ import client
 from friend_list import *
 import file_service
 
+PROFILE_PIC_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'profile_pictures')
+os.makedirs(PROFILE_PIC_FOLDER, exist_ok=True)
 
 UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -210,6 +210,7 @@ routes = [
 
 for route in routes:
     cors.add(app.router.add_route(route.method, route.path, route.handler))
+app.router.add_static('/profile_pictures/', path=PROFILE_PIC_FOLDER, name='profile_pictures')
 
 if __name__ == '__main__':
     web.run_app(app, host="127.0.0.1", port=8000)

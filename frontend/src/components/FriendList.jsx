@@ -191,7 +191,6 @@ const FriendList = ({ onSelect }) => {
 
   // Convert friend object to array of entries with null check
   const friendEntries = friendList ? Object.entries(friendList) : [];
-
   return (
     <>
       <Box sx={{ 
@@ -234,7 +233,7 @@ const FriendList = ({ onSelect }) => {
               >
                 <ListItemAvatar>
                   <Avatar
-                    src={info.avatar_cid ? `profile_pictures/${info.avatar_cid}.jpg` : null}
+                    src={info.avatar_cid ? `http://localhost:8000/profile_pictures/${info.avatar_cid}.jpg` : null}
                     alt={info.nick_name || username}
                   />
                 </ListItemAvatar>

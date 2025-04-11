@@ -48,7 +48,7 @@ const Settings = () => {
                 {/* Profile */}
                 <Stack direction="row" spacing={2} alignItems="center">
                   <Avatar 
-                    src={localStorage.getItem('user_cid') ? `profile_pictures/${localStorage.getItem('user_cid')}.jpg` : null}
+                    src={localStorage.getItem('user_cid') ? `http://localhost:8000/profile_pictures/${localStorage.getItem('user_cid')}.jpg` : null}
                     alt={username || "User"}
                     sx={{ width: 56, height: 56 }}
                   />

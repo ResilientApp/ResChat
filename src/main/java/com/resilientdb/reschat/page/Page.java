@@ -1,11 +1,9 @@
 package com.resilientdb.reschat.page;
 
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.resilientdb.reschat.exceptions.Exceptions;
-import com.resilientdb.reschat.message.Message;
 
 import java.util.ArrayList;
 import java.util.List;

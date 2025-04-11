@@ -1,4 +1,4 @@
-package com.resilientdb.reschat.message;
+package com.resilientdb.reschat.page;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;

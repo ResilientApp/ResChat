@@ -108,7 +108,7 @@ export const sendFile = async (filePath) => {
     console.error('Error sending file:', error);
     return {
       result: false,
-      message: error.response?.data?.message || 'Failed to send file'
+      message: error.response?.data?.message || 'Failed to send file, Retrying...'
     };
   }
 };

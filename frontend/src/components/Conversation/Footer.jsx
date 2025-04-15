@@ -184,7 +184,7 @@ const Footer = () => {
             type: 'success'
           }));
         } else {
-          throw new Error(sendResponse.message || 'Failed to send file');
+          throw new Error(sendResponse.message || 'Failed to send file, Retrying...');
         }
       } else {
         throw new Error(uploadResponse.message || 'Failed to upload file');
@@ -192,7 +192,7 @@ const Footer = () => {
     } catch (error) {
       console.error('Error sending file:', error);
       dispatch(showNotification({
-        message: error.message || 'Failed to send file',
+        message: error.message || 'Failed to send file, Retrying...',
         type: 'error'
       }));
     }
@@ -205,72 +205,59 @@ const Footer = () => {
     const messageToSend = message.trim();
     
     try {
-      const tempMessage = {
-        sender: true,
-        message_type: 'TEXT',
-        message: messageToSend,
-        time_stamp: new Date().toISOString()
-      };
-      
-      const currentChatHistory = chatHistoryRef.current || {};
-      const pageNumbers = Object.keys(currentChatHistory).map(Number);
-      const latestPageNumber = pageNumbers.length > 0 ? Math.max(...pageNumbers) : 1;
-      
-      console.log('Adding optimistic message update:', tempMessage);
-      dispatch(addMessage({
-        pageNumber: latestPageNumber,
-        message: tempMessage
-      }));
-      
-      setMessage('');
-      
-      console.log('Sending message to server:', messageToSend);
-      const response = await sendTextMessage(messageToSend);
-      if (selectedFile !== null) {
-        console.log("File detected, sending file...", selectedFile);
-        await handleFileUpload(selectedFile);
-      } 
-      console.log('Server response:', response);
-      
-      if (response.result) {
-        try {
-          console.log('Message sent successfully, loading updated messages...');
-          
-          const historyResponse = await loadPreviousChatHistory();
-          
-          if (historyResponse.result && historyResponse.chat_history) {
-            console.log('Successfully loaded messages after sending:', historyResponse.chat_history);
-            dispatch(setChatHistory(historyResponse.chat_history));
-          } else {
-            console.error('Failed to load messages after sending:', historyResponse.message);
-            
+      if (messageToSend) {
+        const tempMessage = {
+          sender: true,
+          message_type: 'TEXT',
+          message: messageToSend,
+          time_stamp: new Date().toISOString()
+        };
+        const currentChatHistory = chatHistoryRef.current || {};
+        const pageNumbers = Object.keys(currentChatHistory).map(Number);
+        const latestPageNumber = pageNumbers.length > 0 ? Math.max(...pageNumbers) : 1;
+        dispatch(addMessage({
+          pageNumber: latestPageNumber,
+          message: tempMessage
+        }));
+        setMessage('');
+        const response = await sendTextMessage(messageToSend);
+        console.log('Server response:', response);
+        if (response.result) {
+          try {
+            const historyResponse = await loadPreviousChatHistory();
+            if (historyResponse.result && historyResponse.chat_history) {
+              console.log('Successfully loaded messages after sending:', historyResponse.chat_history);
+              dispatch(setChatHistory(historyResponse.chat_history));
+            } else {
+              console.error('Failed to load messages after sending:', historyResponse.message);
+              if (response.chat_history) {
+                console.log('Using response.chat_history as fallback:', response.chat_history);
+                dispatch(setChatHistory(response.chat_history));
+              }
+            }
+            setTimeout(async () => {
+              try {
+                const followupResponse = await loadPreviousChatHistory();
+                if (followupResponse.result && followupResponse.chat_history) {
+                  dispatch(setChatHistory(followupResponse.chat_history));
+                }
+              } catch (error) {
+                console.error('Error in follow-up load:', error);
+              }
+            }, 1000);
+          } catch (error) {
+            console.error('Error loading messages after sending:', error);
             if (response.chat_history) {
-              console.log('Using response.chat_history as fallback:', response.chat_history);
               dispatch(setChatHistory(response.chat_history));
             }
           }
-          
-          console.log('Scheduling follow-up message loads');
-          
-          setTimeout(async () => {
-            try {
-              const followupResponse = await loadPreviousChatHistory();
-              if (followupResponse.result && followupResponse.chat_history) {
-                dispatch(setChatHistory(followupResponse.chat_history));
-              }
-            } catch (error) {
-              console.error('Error in follow-up load:', error);
-            }
-          }, 1000);
-        } catch (error) {
-          console.error('Error loading messages after sending:', error);
-          
-          if (response.chat_history) {
-            dispatch(setChatHistory(response.chat_history));
-          }
+        } else {
+          throw new Error(response.message || 'Failed to send message');
         }
-      } else {
-        throw new Error(response.message || 'Failed to send message');
+      }
+      if (selectedFile !== null) {
+        console.log("File detected, sending file...", selectedFile);
+        await handleFileUpload(selectedFile);
       }
     } catch (error) {
       console.error('Error sending message:', error);
@@ -278,7 +265,6 @@ const Footer = () => {
         message: error.message || 'Failed to send message',
         type: 'error'
       }));
-      
       setMessage(messageToSend);
     } finally {
       setSending(false);

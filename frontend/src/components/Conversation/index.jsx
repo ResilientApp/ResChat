@@ -16,26 +16,44 @@ const Conversation = () => {
   const messagesContainerRef = useRef(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [allLoaded, setAllLoaded] = useState(false);
-  
-  // Keep track of the number of pages we've loaded
+
   const [loadedPages, setLoadedPages] = useState(new Set());
-  
-  // Keep track of previous scroll height to maintain position
   const scrollHeightRef = useRef(0);
   const scrollPositionRef = useRef(0);
-  
-  // Handle scrolling to load more messages
+
   const handleScroll = async (e) => {
     const { scrollTop } = e.target;
-    
-    // If we're near the top of the scroll container and not already loading more messages
+
     if (scrollTop < 100 && !loadingMore && !allLoaded) {
       setLoadingMore(true);
-      
+
       try {
         console.log('Loading previous messages (scroll triggered)');
-        // Use our improved loadMessages function with the scroll flag
-        await loadMessages(true);
+        const response = await loadPreviousChatHistory();
+
+        if (response && response.result) {
+          if (response.chat_history && Object.keys(response.chat_history).length > 0) {
+            dispatch(updateChatHistory(response.chat_history));
+
+            const newPageNumbers = Object.keys(response.chat_history).map(Number);
+            const newLoaded = new Set(loadedPages);
+            newPageNumbers.forEach(page => newLoaded.add(page));
+            setLoadedPages(newLoaded);
+
+            if (newPageNumbers.includes(1)) {
+              setAllLoaded(true);
+            }
+
+            scrollHeightRef.current = messagesContainerRef.current.scrollHeight;
+            scrollPositionRef.current = messagesContainerRef.current.scrollTop;
+
+          } else {
+            console.log('No more previous messages found.');
+            setAllLoaded(true);
+          }
+        } else {
+          console.warn('Failed to load previous messages:', response?.message);
+        }
       } catch (error) {
         console.error('Error in scroll-triggered message loading:', error);
       } finally {
@@ -43,306 +61,290 @@ const Conversation = () => {
       }
     }
   };
-  
-  // Set up polling for chat updates
-  // We're now handling this in the main useEffect and the GeneralApp component
 
-  // Loading state for previous messages
-  const [isLoadingPrevious, setIsLoadingPrevious] = useState(false);
-  
-  // Function to load messages using loadPreviousChatHistory
-  const loadMessages = async (isScrollTriggered = false) => {
-    // Function is used both for scheduled updates and scroll-triggered loading
-    // We use isScrollTriggered to distinguish between these cases
-    
-    if (isLoadingPrevious) return;
-    
+  const [isLoadingUpdates, setIsLoadingUpdates] = useState(false);
+
+  const loadOlderMessages = async () => {
+    if (isLoadingUpdates || loadingMore || allLoaded) return;
+
+    setIsLoadingUpdates(true);
+    scrollHeightRef.current = messagesContainerRef.current?.scrollHeight || 0;
+    scrollPositionRef.current = messagesContainerRef.current?.scrollTop || 0;
+
     try {
-      setIsLoadingPrevious(true);
-      
-      // Save scroll positions if this is a scroll-triggered load
-      if (isScrollTriggered && messagesContainerRef.current) {
-        scrollHeightRef.current = messagesContainerRef.current.scrollHeight;
-        scrollPositionRef.current = messagesContainerRef.current.scrollTop;
-      }
-      
-      console.log('Loading chat messages using loadPreviousChatHistory API...');
-      
+      console.log('Loading older chat messages using loadPreviousChatHistory API...');
       const response = await loadPreviousChatHistory();
-      
+
       if (response && response.result) {
-        console.log('Successfully loaded messages:', response.chat_history);
+        console.log('Successfully loaded older messages:', response.chat_history);
         if (response.chat_history && Object.keys(response.chat_history).length > 0) {
-          // Extract the new pages from the response
           const newPageNumbers = Object.keys(response.chat_history).map(Number);
-          console.log('Response contains pages:', newPageNumbers);
-          
-          // Check which pages are new
           const currentLoadedPages = new Set(loadedPages);
           const actuallyNewPages = newPageNumbers.filter(page => !currentLoadedPages.has(page));
-          
+
           if (actuallyNewPages.length > 0) {
-            console.log('New pages found:', actuallyNewPages);
-            
-            // Create a merged chat history to avoid losing any messages
-            const mergedChatHistory = { ...chatHistory };
-            
-            // Add new pages from the response
-            Object.entries(response.chat_history).forEach(([pageNum, messages]) => {
-              const pageNumber = Number(pageNum);
-              if (!mergedChatHistory[pageNumber] || mergedChatHistory[pageNumber].length === 0) {
-                mergedChatHistory[pageNumber] = messages;
-              }
-            });
-            
-            // Update Redux with the merged history
-            dispatch(setChatHistory(mergedChatHistory));
-            
-            // Update our set of loaded pages
+            console.log('New older pages found:', actuallyNewPages);
+            dispatch(updateChatHistory(response.chat_history));
+
             const newLoadedPages = new Set(loadedPages);
             actuallyNewPages.forEach(page => newLoadedPages.add(page));
             setLoadedPages(newLoadedPages);
-            
-            // Reset allLoaded flag since we found new pages
-            setAllLoaded(false);
-          } else if (isScrollTriggered) {
-            // If we're scrolling up but didn't find new pages, we might be at the beginning
-            console.log('No new pages found during scroll-triggered load');
-            setAllLoaded(true);
+
+            if (newLoadedPages.has(1)) {
+              console.log('Reached the beginning of the conversation.');
+              setAllLoaded(true);
+            }
+          } else {
+            console.log('loadPreviousChatHistory returned already loaded pages or empty.');
+            if (Object.keys(response.chat_history).length === 0) {
+              setAllLoaded(true);
+            }
           }
         } else {
-          console.log('No messages found in response');
-          if (isScrollTriggered) {
-            setAllLoaded(true);
-          }
-        }
-      } else {
-        // Handle failed response gracefully - don't show errors to user
-        console.warn('Failed to load messages or server returned error.');
-        
-        // If we get an error from the server, we'll wait a bit longer
-        // before trying again to avoid spamming the server
-        await new Promise(resolve => setTimeout(resolve, 2000));
-      }
-    } catch (error) {
-      console.error('Error loading messages:', error);
-      // Fail silently to the user - just log the error
-    } finally {
-      setIsLoadingPrevious(false);
-    }
-  };
-  
-  // No need to expose this globally anymore
-  
-  // Load messages when a friend is selected
-  useEffect(() => {
-    if (selectedFriend) {
-      console.log('Friend selected, initializing conversation view...');
-      
-      // Reset state for new friend selection
-      setLoadedPages(new Set());
-      setAllLoaded(false);
-      
-      // When a friend is selected, we already have initial messages
-      // from the initialLoadChatHistory call in GeneralApp.
-      
-      // Let's analyze what pages we have and record them in loadedPages
-      const pageNumbers = Object.keys(chatHistory || {}).map(Number);
-      if (pageNumbers.length > 0) {
-        console.log('Initial pages already loaded:', pageNumbers);
-        setLoadedPages(new Set(pageNumbers));
-        
-        // Check if we need to set allLoaded based on page numbers
-        // If page 1 is loaded, we're likely at the beginning
-        if (pageNumbers.includes(1)) {
-          console.log('Page 1 is already loaded, marking as allLoaded');
+          console.log('No more older messages found.');
           setAllLoaded(true);
         }
       } else {
-        // If we don't have any pages yet, try loading them
-        console.log('No pages loaded yet, fetching initial messages');
-        loadMessages(false);
+        console.warn('Failed to load older messages or server returned error.');
       }
+    } catch (error) {
+      console.error('Error loading older messages:', error);
+    } finally {
+      setIsLoadingUpdates(false);
     }
-  }, [selectedFriend, chatHistory]);
+  };
 
-  // Load initial chat history when component mounts or friend changes
   useEffect(() => {
     const loadInitialChat = async () => {
+      if (!selectedFriend) return;
+
+      console.log(`Loading initial chat for ${selectedFriend}`);
+      dispatch(setChatHistory({}));
+      setLoadedPages(new Set());
+      setAllLoaded(false);
+      lastMessageCountRef.current = 0;
+
       try {
         const response = await initialLoadChatHistory();
-        if (response.result) {
-          dispatch(setChatHistory(response.chat_history || {}));
+        if (response.result && response.chat_history) {
+          console.log('Initial chat history loaded:', response.chat_history);
+          dispatch(setChatHistory(response.chat_history));
+
+          const initialPageNumbers = Object.keys(response.chat_history).map(Number);
+          setLoadedPages(new Set(initialPageNumbers));
+
+          if (initialPageNumbers.includes(1)) {
+            console.log('Initial load included page 1, marking allLoaded.');
+            setAllLoaded(true);
+          }
+
         } else {
-          throw new Error(response.message || 'Failed to load chat history');
+          throw new Error(response.message || 'Failed to load initial chat history');
         }
       } catch (error) {
         console.error('Error loading initial chat:', error);
         dispatch(showNotification({
-          message: 'Failed to load chat history',
+          message: `Failed to load chat: ${error.message}`,
           type: 'error'
         }));
       }
     };
 
-    if (selectedFriend) {
-      loadInitialChat();
-    }
+    loadInitialChat();
 
     return () => {
-      // Cleanup
-      dispatch(setChatHistory({}));
+      console.log(`Cleaning up conversation for ${selectedFriend}`);
     };
   }, [selectedFriend, dispatch]);
-  
-  // Track consecutive errors
+
   const errorCountRef = useRef(0);
-  const maxErrorsAllowed = 3;
-  const pollingIntervalRef = useRef(2000);
-  
-  // Set up periodic loading of messages with awareness of scrolling
+  const maxErrorsAllowed = 5;
+  const pollingIntervalRef = useRef(null);
+  const currentPollingInterval = useRef(3000);
+
   useEffect(() => {
-    let intervalId;
-    
-    if (selectedFriend) {
-      // Poll at a reasonable interval
-      intervalId = setInterval(async () => {
-        // Only auto-refresh if we're not scrolled up and not currently loading more
-        if (messagesContainerRef.current) {
-          const isNearBottom = messagesContainerRef.current.scrollHeight - 
-                                messagesContainerRef.current.scrollTop - 
-                                messagesContainerRef.current.clientHeight < 100;
-          
-          if (isNearBottom && !loadingMore && !isLoadingPrevious) {
-            try {
-              // Only load messages if we're scrolled to bottom
-              // Pass false to indicate this is a periodic update, not scroll-triggered
-              await loadMessages(false);
-              
-              // Reset error count on success
-              errorCountRef.current = 0;
-              // Reset polling interval after successful requests
-              pollingIntervalRef.current = 2000;
-            } catch (error) {
-              // Increment error count
-              errorCountRef.current++;
-              console.warn(`Loading error (${errorCountRef.current}/${maxErrorsAllowed})`);
-              
-              // If we've had too many consecutive errors, slow down polling
-              if (errorCountRef.current >= maxErrorsAllowed) {
-                pollingIntervalRef.current = 5000; // Slow down to 5 seconds
-                console.warn('Too many errors, slowing down polling');
-              }
-            }
+    const pollForUpdates = async () => {
+      if (!selectedFriend || isLoadingUpdates || loadingMore) {
+        return;
+      }
+
+      let isNearBottom = true;
+      if (messagesContainerRef.current) {
+        isNearBottom = messagesContainerRef.current.scrollHeight -
+                       messagesContainerRef.current.scrollTop -
+                       messagesContainerRef.current.clientHeight < 200;
+      }
+
+      if (!isNearBottom) {
+        return;
+      }
+
+      setIsLoadingUpdates(true);
+
+      try {
+        console.log('Polling for new messages...');
+        const response = await fetchChatUpdates();
+
+        if (response && response.result && response.chat_history) {
+          if (Object.keys(response.chat_history).length > 0) {
+            console.log('New message data received:', response.chat_history);
+            dispatch(updateChatHistory(response.chat_history));
+
+            const newPageNumbers = Object.keys(response.chat_history).map(Number);
+            const newLoaded = new Set(loadedPages);
+            newPageNumbers.forEach(page => newLoaded.add(page));
+            setLoadedPages(newLoaded);
+          }
+
+          errorCountRef.current = 0;
+          if (currentPollingInterval.current > 3000) {
+            console.log('Resetting polling interval to 3000ms');
+            currentPollingInterval.current = 3000;
+            clearInterval(pollingIntervalRef.current);
+            pollingIntervalRef.current = setInterval(pollForUpdates, currentPollingInterval.current);
+          }
+        } else {
+          console.warn('Polling request failed or returned no result:', response?.message);
+          errorCountRef.current++;
+        }
+      } catch (error) {
+        console.error('Error during polling:', error);
+        errorCountRef.current++;
+      } finally {
+        setIsLoadingUpdates(false);
+
+        if (errorCountRef.current >= maxErrorsAllowed) {
+          const nextInterval = Math.min(currentPollingInterval.current * 2, 30000);
+          if (nextInterval > currentPollingInterval.current) {
+            console.warn(`Polling errors reached ${errorCountRef.current}. Increasing interval to ${nextInterval}ms.`);
+            currentPollingInterval.current = nextInterval;
+            clearInterval(pollingIntervalRef.current);
+            pollingIntervalRef.current = setInterval(pollForUpdates, currentPollingInterval.current);
           }
         }
-      }, pollingIntervalRef.current);
-    }
-    
-    return () => {
-      if (intervalId) clearInterval(intervalId);
+      }
     };
-  }, [selectedFriend, loadingMore, isLoadingPrevious]);
 
-  // Keep track of the last message count to determine if new messages arrived
-  const lastMessageCountRef = useRef(0);
-  
-  // Initial scroll to bottom when first messages load or friend changes
-  useEffect(() => {
-    if (messagesEndRef.current && selectedFriend && Object.keys(chatHistory || {}).length > 0) {
-      // Scroll to the latest messages immediately
-      setTimeout(() => {
-        messagesEndRef.current.scrollIntoView({ behavior: 'auto' });
-        console.log('Initially scrolled to bottom for', selectedFriend);
-      }, 100);
+    if (selectedFriend) {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+      console.log(`Starting polling interval (${currentPollingInterval.current}ms) for ${selectedFriend}`);
+      pollingIntervalRef.current = setInterval(pollForUpdates, currentPollingInterval.current);
     }
-  }, [selectedFriend, Object.keys(chatHistory || {}).length]);
-  
-  // Maintain scroll position when loading older messages but scroll to bottom when new messages come in
+
+    return () => {
+      if (pollingIntervalRef.current) {
+        console.log(`Clearing polling interval for ${selectedFriend}`);
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+      currentPollingInterval.current = 3000;
+      errorCountRef.current = 0;
+    };
+  }, [selectedFriend, dispatch, loadedPages, isLoadingUpdates, loadingMore]);
+
+  const lastMessageCountRef = useRef(0);
+
+  useEffect(() => {
+    if (messagesEndRef.current && selectedFriend) {
+      const messageCount = Object.values(chatHistory || {}).flat().length;
+      if (messageCount > 0) {
+        console.log('Scrolling to bottom initially for', selectedFriend);
+        setTimeout(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
+          lastMessageCountRef.current = messageCount;
+        }, 100);
+      }
+    }
+  }, [selectedFriend]);
+
   useEffect(() => {
     if (!messagesContainerRef.current) return;
-    
-    // Calculate total message count
+
     const allMessages = Object.values(chatHistory || {}).flat();
     const messageCount = allMessages.length;
-    
+
     if (loadingMore && scrollHeightRef.current > 0) {
-      // If we're loading previous messages (scrolling up),
-      // maintain the relative scroll position
       const newScrollHeight = messagesContainerRef.current.scrollHeight;
       const heightDifference = newScrollHeight - scrollHeightRef.current;
-      
+
       if (heightDifference > 0) {
-        console.log('Adjusting scroll position to maintain view', 
-          { prev: scrollPositionRef.current, diff: heightDifference });
-        messagesContainerRef.current.scrollTop = scrollPositionRef.current + heightDifference;
+        console.log('Adjusting scroll position after loading older messages',
+          { prevScrollTop: scrollPositionRef.current, diff: heightDifference });
+        setTimeout(() => {
+          if (messagesContainerRef.current) {
+            messagesContainerRef.current.scrollTop = scrollPositionRef.current + heightDifference;
+          }
+        }, 0);
       }
-    } else if (messageCount > lastMessageCountRef.current) {
-      // If new messages arrived (regular update or sent message),
-      // scroll to bottom only if we weren't scrolled up
-      const isNearBottom = messagesContainerRef.current.scrollHeight - 
-                          messagesContainerRef.current.scrollTop - 
-                          messagesContainerRef.current.clientHeight < 100;
-                          
+      scrollHeightRef.current = 0;
+      scrollPositionRef.current = 0;
+
+    } else if (messageCount > lastMessageCountRef.current && !loadingMore) {
+      const isNearBottom = messagesContainerRef.current.scrollHeight -
+                          messagesContainerRef.current.scrollTop -
+                          messagesContainerRef.current.clientHeight < 250;
+
       if (isNearBottom && messagesEndRef.current) {
-        console.log('Scrolling to bottom for new messages');
-        messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+        console.log('Scrolling smoothly to bottom for new messages');
+        setTimeout(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }, 50);
+      } else {
+        console.log('New messages arrived, but user was scrolled up. Not scrolling automatically.');
       }
     }
-    
-    // Update message count reference
+
     lastMessageCountRef.current = messageCount;
   }, [chatHistory, loadingMore]);
 
-
-  // Format chat history into a flat array for rendering
-  // Use a try/catch to handle any unexpected issues
   let messages = [];
   try {
     messages = Object.entries(chatHistory || {})
-      // Make sure we sort pages numerically (not as strings)
       .sort(([pageNumA], [pageNumB]) => parseInt(pageNumA) - parseInt(pageNumB))
-      // Extract messages from each page and flatten into single array
       .flatMap(([pageNum, msgs]) => {
-        // Handle null, undefined, or non-array values safely
         if (!msgs || !Array.isArray(msgs)) {
           console.warn(`Page ${pageNum} has invalid messages format:`, msgs);
           return [];
         }
-        return msgs.filter(msg => msg != null); // Extra safety filter
-      });
+        return msgs.filter(msg => msg != null);
+      })
+      .sort((a, b) => new Date(a.time_stamp) - new Date(b.time_stamp));
   } catch (error) {
-    console.error('Error processing chat history:', error);
+    console.error('Error processing chat history for rendering:', error);
     messages = [];
+    dispatch(showNotification({ message: 'Error displaying messages', type: 'error' }));
   }
-  
+
   return (
     <Stack height={'100%'} maxHeight={'100vh'} width={'auto'}>
-      {/* Chat header */}
       <Header />
-      
-      {/* Messages container */}
-      <Box 
-        className='scrollbar' 
-        width={"100%"} 
+
+      <Box
+        className='scrollbar'
+        width={"100%"}
         sx={{
-          flexGrow: 1, 
-          height: '100%', 
+          flexGrow: 1,
+          height: 'calc(100% - 128px)',
           overflowY: 'scroll',
           '&::-webkit-scrollbar': {
-            width: '0.4em'
+            width: '6px'
           },
           '&::-webkit-scrollbar-track': {
             background: 'transparent'
           },
           '&::-webkit-scrollbar-thumb': {
-            backgroundColor: theme.palette.mode === 'light' ? '#bdbdbd' : '#666'
+            backgroundColor: theme.palette.mode === 'light' ? '#bdbdbd' : '#555',
+            borderRadius: '3px'
+          },
+          '&::-webkit-scrollbar-thumb:hover': {
+            backgroundColor: theme.palette.mode === 'light' ? '#a0a0a0' : '#777'
           }
         }}
         ref={messagesContainerRef}
         onScroll={handleScroll}
       >
-        {/* Loading indicator for previous messages */}
         {loadingMore && (
           <Box sx={{ textAlign: 'center', padding: 2 }}>
             <CircularProgress size={24} />
@@ -351,45 +353,40 @@ const Conversation = () => {
             </Typography>
           </Box>
         )}
-        
-        {/* All loaded indicator */}
-        {allLoaded ? (
+
+        {allLoaded && !loadingMore && messages.length > 0 && (
           <Box sx={{ textAlign: 'center', padding: 2 }}>
             <Typography variant="caption" color="text.secondary">
               Beginning of conversation
             </Typography>
           </Box>
-        ) : (
-          // Show a subtle hint to scroll up for more messages if we have some pages
-          // but aren't at the beginning yet
-          <Box sx={{ 
-            textAlign: 'center', 
+        )}
+
+        {!allLoaded && !loadingMore && messages.length > 0 && (
+          <Box sx={{
+            textAlign: 'center',
             padding: 1,
-            opacity: Object.keys(chatHistory || {}).length > 0 ? 0.7 : 0,
+            opacity: 0.7,
             transition: 'opacity 0.3s'
           }}>
-            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
-              Scroll up to load earlier messages
-            </Typography>
           </Box>
         )}
-        
-        {/* Render messages */}
+
         {messages.length > 0 ? (
           <Message messages={messages} />
         ) : (
-          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-            <Typography color="text.secondary">
-              No messages yet. Send a message to start the conversation!
-            </Typography>
-          </Box>
+          !isLoadingUpdates && !loadingMore && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+              <Typography color="text.secondary">
+                No messages yet. Send one to start!
+              </Typography>
+            </Box>
+          )
         )}
-        
-        {/* Invisible element to allow scrolling to the most recent messages */}
-        <div ref={messagesEndRef} />
+
+        <div ref={messagesEndRef} style={{ height: '1px' }} />
       </Box>
-      
-      {/* Chat input footer */}
+
       <Footer />
     </Stack>
   )

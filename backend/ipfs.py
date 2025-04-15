@@ -94,7 +94,3 @@ def download_file_from_ipfs(cid, save_path):
         error_message = f"Error downloading file from IPFS: {e}"
         print(error_message)
         return {"success": False, "message": error_message}
-
-# QmZCG1a88VCF2Vbej5iijQ8PvURupnetPytLkvTgEyUrhw
-print("jeeee")
-print(add_file_to_cluster("log.txt"))

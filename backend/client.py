@@ -305,7 +305,7 @@ def update_chat_history():
     if page_number not in current_chat_history:
         current_chat_history[page_number] = []
         if page_number == 1:
-            return
+            return initial_load_chat_history()
 
         previous_page_local_messages = current_chat_history.get(page_number - 1, [])
 

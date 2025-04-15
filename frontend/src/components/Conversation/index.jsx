@@ -248,16 +248,16 @@ const Conversation = () => {
 
   useEffect(() => {
     if (messagesEndRef.current && selectedFriend) {
-      const messageCount = Object.values(chatHistory || {}).flat().length;
-      if (messageCount > 0) {
-        console.log('Scrolling to bottom initially for', selectedFriend);
-        setTimeout(() => {
-          messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
-          lastMessageCountRef.current = messageCount;
-        }, 100);
-      }
+        const messageCount = Object.values(chatHistory || {}).flat().length;
+        if (messageCount > 0) {
+            console.log('Scrolling to bottom initially for', selectedFriend);
+            setTimeout(() => {
+                messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+                lastMessageCountRef.current = messageCount;
+            }, 100);
+        }
     }
-  }, [selectedFriend]);
+  }, [selectedFriend, chatHistory]);
 
   useEffect(() => {
     if (!messagesContainerRef.current) return;

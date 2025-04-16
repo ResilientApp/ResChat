@@ -1,6 +1,8 @@
 # Project Setup Guide
 
+
 ## Build and Installation
+Install Bazel
 ```bash
 cd backend/bazel
 bazel build //...

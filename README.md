@@ -2,7 +2,7 @@
 
 
 ## Build and Installation
-### Install Bazel 7
+### Install Bazel 7 : https://bazel.build/versions/7.5.0/install
 
 #### Prerequisites
 - GCC and G++

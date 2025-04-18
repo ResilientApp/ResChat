@@ -10,10 +10,7 @@
 sudo apt install gcc-11
 sudo apt install g++-11
 ```
-- OpenSSL
-```bash
-sudo apt install openssl libssl-dev
-```
+
 - Python 3.8
 
 #### Installation

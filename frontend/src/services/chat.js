@@ -230,3 +230,45 @@ export const downloadFile = async (savePath, fileInfo) => {
     };
   }
 };
+
+// Upload and update user's avatar
+export const uploadAvatar = async (file) => {
+  try {
+    // Create form data for multipart upload
+    const formData = new FormData();
+    formData.append('avatar', file);
+    
+    console.log('Uploading new avatar');
+    const response = await axios.post('/update_avatar', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    
+    console.log('Avatar update response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error updating avatar:', error);
+    return {
+      result: false,
+      message: error.response?.data?.message || 'Failed to update avatar'
+    };
+  }
+};
+
+// Refresh avatars to get the latest profile pictures of friends
+export const refreshAvatars = async () => {
+  try {
+    console.log('Refreshing avatars');
+    const response = await axios.get('/refresh_avatars');
+    console.log('Avatar refresh response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error refreshing avatars:', error);
+    return {
+      result: false,
+      message: error.response?.data?.message || 'Failed to refresh avatars',
+      friend_list: {}
+    };
+  }
+};

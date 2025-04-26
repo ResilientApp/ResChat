@@ -529,6 +529,55 @@ def load_specific_page(page_number: int) -> {}:
     }
 
 
+def update_user_avatar(avatar_file_path: str) -> {}:
+    """
+    Updates the current user's avatar by uploading it to IPFS and updating the CID in RSDB
+    
+    Args:
+        avatar_file_path: Path to the new avatar file
+        
+    Returns:
+        Dictionary with result status and message or avatar_cid if successful
+    """
+    global my_username
+    
+    if not my_username:
+        return {"result": False, "message": "Not logged in"}
+    
+    if not os.path.exists(avatar_file_path):
+        return {"result": False, "message": "Avatar file not found"}
+    
+    try:
+        # Upload avatar to IPFS
+        avatar_cid = add_file_to_cluster(avatar_file_path)
+        
+        if not avatar_cid:
+            return {"result": False, "message": "Failed to upload avatar to IPFS"}
+        
+        # Update avatar CID in RSDB
+        result = update_avatar(my_username, avatar_cid)
+        
+        if result["result"]:
+            # Save a copy to profile_pictures folder for immediate access
+            avatar_destination = os.path.join("profile_pictures", f"{avatar_cid}.jpg")
+            shutil.copy(avatar_file_path, avatar_destination)
+            
+            # Delete the temporary uploaded file
+            if os.path.exists(avatar_file_path):
+                os.remove(avatar_file_path)
+            
+            return {
+                "result": True, 
+                "message": "Avatar updated successfully", 
+                "avatar_cid": avatar_cid
+            }
+        else:
+            return result
+            
+    except Exception as e:
+        return {"result": False, "message": f"Error updating avatar: {str(e)}"}
+
+
 def download_and_decrypt_file(save_path: str, file_info: {}) -> {}:
     aes_key = file_info["key"]
     cid = file_info["cid"]

@@ -5,6 +5,7 @@ import { useTheme } from "@mui/material/styles";
 import StyledBadge from '../StyledBadge';
 import { toggleSidebar } from '../../redux/slices/app';
 import { useDispatch, useSelector } from 'react-redux';
+import axios from '../../utils/axios';
 
 const Header = () => {
   const dispatch = useDispatch();
@@ -44,7 +45,7 @@ const Header = () => {
               {avatarCid ? (
                 <Avatar 
                   alt={displayName} 
-                  src={`http://localhost:8000/profile_pictures/${avatarCid}.jpg`}
+                  src={`${axios.defaults.baseURL}/profile_pictures/${avatarCid}.jpg`}
                 />
               ) : (
                 <Avatar>

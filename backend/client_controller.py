@@ -151,9 +151,49 @@ async def handle_signup_multipart(request):
             return username, password, avatar_location
 
 async def get_friend_list_handler(request):
-    
     friend_list_res = load_my_friend_list(client.my_username)
     return web.json_response({"result": True, "friend_list": friend_list_res})
+
+async def refresh_avatars_handler(request):
+    """
+    Endpoint to refresh avatar CIDs for all friends in the user's friend list.
+    This is used to get the latest avatars of friends who may have updated their profile pictures.
+    """
+    try:
+        if not client.my_username:
+            return web.json_response({
+                "result": False,
+                "message": "Not logged in"
+            }, status=401)
+        
+        # Get the current friend list
+        friend_list = load_my_friend_list(client.my_username)
+        
+        # Update avatar CIDs in the friend list
+        updated_friend_list = await run_sync(update_avatar_list, friend_list)
+        
+        # Update the global friend list
+        client.my_friend_list = updated_friend_list
+        
+        # Save the updated friend list back to RSDB
+        await run_sync(update_rsdb_friend_list, updated_friend_list, client.my_username)
+        
+        # Download any new avatars
+        for username, friend_info in updated_friend_list.items():
+            avatar_cid = friend_info.get("avatar_cid")
+            if avatar_cid:
+                await run_sync(download_avatar, avatar_cid)
+        
+        return web.json_response({
+            "result": True, 
+            "message": "Avatars refreshed successfully",
+            "friend_list": updated_friend_list
+        })
+    except Exception as e:
+        return web.json_response({
+            "result": False,
+            "message": f"Error refreshing avatars: {str(e)}"
+        }, status=500)
 
 async def temp_file_upload_handler(request):
     try:
@@ -210,6 +250,48 @@ cors = cors_setup(app, defaults={
 })
 
 # Update routes with CORS
+async def update_avatar_handler(request):
+    try:
+        # Process multipart request to get avatar file
+        reader = await request.multipart()
+        
+        # Get avatar field
+        field = await reader.next()
+        if not field or not field.name == 'avatar':
+            return web.json_response({
+                "result": False,
+                "message": "No avatar field found in request"
+            }, status=400)
+        
+        # Get current username from session
+        username = client.my_username
+        if not username:
+            return web.json_response({
+                "result": False,
+                "message": "Not logged in"
+            }, status=401)
+        
+        # Save avatar file temporarily
+        filename = f"{username}_avatar_{field.filename}"
+        filepath = os.path.join(UPLOAD_DIR, filename)
+        
+        with open(filepath, 'wb') as f:
+            while True:
+                chunk = await field.read_chunk()
+                if not chunk:
+                    break
+                f.write(chunk)
+        
+        # Upload avatar to IPFS and update user's avatar CID
+        result = await run_sync(client.update_user_avatar, filepath)
+        
+        return web.json_response(result)
+    except Exception as e:
+        return web.json_response({
+            "result": False,
+            "message": f"Error updating avatar: {str(e)}"
+        }, status=500)
+
 routes = [
     web.get('/', welcome_handler),
     web.post('/login', login_handler),
@@ -226,8 +308,10 @@ routes = [
     web.get('/load_specific_page', load_specific_page_handler),
     web.post('/download_file', download_file_handler),
     web.get('/get_friend_list', get_friend_list_handler),
+    web.get('/refresh_avatars', refresh_avatars_handler),
     web.post('/upload_temp_file', temp_file_upload_handler),
-    web.delete('/delete_temp_file/{filename}', delete_file_handler)
+    web.delete('/delete_temp_file/{filename}', delete_file_handler),
+    web.post('/update_avatar', update_avatar_handler)
 ]
 
 for route in routes:

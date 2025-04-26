@@ -52,9 +52,10 @@ const FilePreview = styled(Box)(({ theme }) => ({
   maxWidth: '200px',
 }));
 
-const MessageInput = ({ value, onChange, onKeyPress, onSend, setOpenPicker, inputRef, setSelectedFile }) => {
+const MessageInput = ({ value, onChange, onKeyPress, onSend, setOpenPicker, inputRef, selectedFile, setSelectedFile, clearFileSelectionRef }) => {
   const [openAction, setOpenAction] = useState(false);
   const fileInputRef = useRef(null);
+  const theme = useTheme();
   const dispatch = useDispatch();
   
   const handleFileSelect = (event) => {
@@ -63,6 +64,50 @@ const MessageInput = ({ value, onChange, onKeyPress, onSend, setOpenPicker, inpu
     if (selectedFile1) {
       setSelectedFile(selectedFile1);
       console.log("File selected:", selectedFile1);
+    }
+  };
+  
+  const handleRemoveFile = () => {
+    setSelectedFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+  
+  // Expose the clear file function to the parent component
+  useEffect(() => {
+    if (clearFileSelectionRef) {
+      clearFileSelectionRef.current = () => {
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      };
+    }
+    
+    return () => {
+      if (clearFileSelectionRef) {
+        clearFileSelectionRef.current = null;
+      }
+    };
+  }, [clearFileSelectionRef]);
+  
+  // Format file size to human-readable format
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    return `${parseFloat((bytes / Math.pow(1024, i)).toFixed(2))} ${sizes[i]}`;
+  };
+  
+  // Determine file icon based on file type
+  const getFileIcon = (fileName) => {
+    const extension = fileName.split('.').pop().toLowerCase();
+    const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg'];
+    
+    if (imageExtensions.includes(extension)) {
+      return <Image size={20} />;
+    } else {
+      return <FileIcon size={20} />;
     }
   };
   
@@ -84,60 +129,100 @@ const MessageInput = ({ value, onChange, onKeyPress, onSend, setOpenPicker, inpu
   ];
   
   return (
-    <StyledInput 
-      fullWidth 
-      placeholder='Write a message...' 
-      variant='filled' 
-      value={value}
-      onChange={onChange}
-      onKeyPress={onKeyPress}
-      inputRef={inputRef}
-      InputProps={{
-        disableUnderline: true,
-        startAdornment: (
-          <Stack sx={{ width: 'max-content' }}>
-            <Stack sx={{ position: 'relative', display: openAction ? 'inline-block' : 'none' }}>
-              {Actions.map((el, index) => (
-                <Tooltip key={index} placement='right' title={el.title}>
-                  <Fab 
-                    size="small"
-                    sx={{ position: 'absolute', top: -el.y, backgroundColor: el.color, color: '#fff' }}
-                    onClick={() => {
-                      el.onClick();
-                      setOpenAction(false);
-                    }}
-                  >
-                    {el.icon}
-                  </Fab>
-                </Tooltip>
-              ))}
-            </Stack>
-            <InputAdornment position="start">
-              <IconButton onClick={() => {
-                setOpenAction((prev) => !prev);
-              }}>
-                <LinkSimple />
-              </IconButton>
-              <input
-                type="file"
-                ref={fileInputRef}
-                style={{ display: 'none' }}
-                onChange={handleFileSelect}
-              />
-            </InputAdornment>
-          </Stack>
-        ),
-        endAdornment: (
-          <InputAdornment position="end">
-            <IconButton onClick={() => {
-              setOpenPicker((prev) => !prev);
-            }}>
-              <Smiley />
+    <>
+      {/* File attachment preview */}
+      {selectedFile && (
+        <Box 
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            p: 1,
+            mb: 1,
+            borderRadius: 1,
+            bgcolor: theme.palette.mode === 'light' ? 'rgba(0, 0, 0, 0.04)' : 'rgba(255, 255, 255, 0.05)',
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1, overflow: 'hidden' }}>
+            {getFileIcon(selectedFile.name)}
+            <Box sx={{ ml: 1, overflow: 'hidden' }}>
+              <Typography variant="body2" noWrap title={selectedFile.name}>
+                {selectedFile.name}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {formatFileSize(selectedFile.size)}
+              </Typography>
+            </Box>
+          </Box>
+          <Tooltip title="Remove file">
+            <IconButton size="small" onClick={handleRemoveFile}>
+              <X size={16} />
             </IconButton>
-          </InputAdornment>
-        )
-      }}
-    />
+          </Tooltip>
+        </Box>
+      )}
+      
+      <StyledInput 
+        fullWidth 
+        placeholder={selectedFile ? 'File selected. Click send to share...' : 'Write a message...'} 
+        variant='filled' 
+        value={value}
+        onChange={onChange}
+        onKeyPress={onKeyPress}
+        inputRef={inputRef}
+        disabled={!!selectedFile} // Disable text input when file is selected
+        InputProps={{
+          disableUnderline: true,
+          startAdornment: (
+            <Stack sx={{ width: 'max-content' }}>
+              <Stack sx={{ position: 'relative', display: openAction ? 'inline-block' : 'none' }}>
+                {Actions.map((el, index) => (
+                  <Tooltip key={index} placement='right' title={el.title}>
+                    <Fab 
+                      size="small"
+                      sx={{ position: 'absolute', top: -el.y, backgroundColor: el.color, color: '#fff' }}
+                      onClick={() => {
+                        el.onClick();
+                        setOpenAction(false);
+                      }}
+                    >
+                      {el.icon}
+                    </Fab>
+                  </Tooltip>
+                ))}
+              </Stack>
+              <InputAdornment position="start">
+                <IconButton 
+                  onClick={() => {
+                    setOpenAction((prev) => !prev);
+                  }}
+                  disabled={!!selectedFile} // Disable attachment button when a file is already selected
+                >
+                  <LinkSimple color={selectedFile ? theme.palette.text.disabled : undefined} />
+                </IconButton>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  style={{ display: 'none' }}
+                  onChange={handleFileSelect}
+                />
+              </InputAdornment>
+            </Stack>
+          ),
+          endAdornment: (
+            <InputAdornment position="end">
+              <IconButton 
+                onClick={() => {
+                  setOpenPicker((prev) => !prev);
+                }}
+                disabled={!!selectedFile} // Disable emoji picker when file is selected
+              >
+                <Smiley color={selectedFile ? theme.palette.text.disabled : undefined} />
+              </IconButton>
+            </InputAdornment>
+          )
+        }}
+      />
+    </>
   );
 };
 
@@ -150,6 +235,7 @@ const Footer = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const { selectedFriend, chatHistory } = useSelector((state) => state.app);
   const inputRef = useRef(null);
+  const fileInputRef = useRef(null);
   const chatHistoryRef = useRef(chatHistory);
   
   useEffect(() => {
@@ -198,14 +284,21 @@ const Footer = () => {
     }
   };
   
+  // Create a ref to store the function to clear file selection
+  // This will be set by the MessageInput component
+  const clearFileSelectionRef = useRef(null);
+  
   const handleSendMessage = async () => {
+    // Check if there's either text or a file to send
     if ((!message.trim() && !selectedFile) || !selectedFriend || sending) return;
     
     setSending(true);
     const messageToSend = message.trim();
     
     try {
-      if (messageToSend) {
+      // If there's a text message to send (only when no file is selected)
+      if (messageToSend && !selectedFile) {
+        // Create a temporary message to show in UI immediately
         const tempMessage = {
           sender: true,
           message_type: 'TEXT',
@@ -215,15 +308,23 @@ const Footer = () => {
         const currentChatHistory = chatHistoryRef.current || {};
         const pageNumbers = Object.keys(currentChatHistory).map(Number);
         const latestPageNumber = pageNumbers.length > 0 ? Math.max(...pageNumbers) : 1;
+        
+        // Add to local state for immediate feedback
         dispatch(addMessage({
           pageNumber: latestPageNumber,
           message: tempMessage
         }));
+        
+        // Clear the input field
         setMessage('');
+        
+        // Send the message to server
         const response = await sendTextMessage(messageToSend);
         console.log('Server response:', response);
+        
         if (response.result) {
           try {
+            // Refresh chat history after sending
             const historyResponse = await loadPreviousChatHistory();
             if (historyResponse.result && historyResponse.chat_history) {
               console.log('Successfully loaded messages after sending:', historyResponse.chat_history);
@@ -235,6 +336,8 @@ const Footer = () => {
                 dispatch(setChatHistory(response.chat_history));
               }
             }
+            
+            // Sometimes messages take a moment to appear, do a second refresh after delay
             setTimeout(async () => {
               try {
                 const followupResponse = await loadPreviousChatHistory();
@@ -255,9 +358,15 @@ const Footer = () => {
           throw new Error(response.message || 'Failed to send message');
         }
       }
+      
+      // If there's a file to send (can't send both file and text at once)
       if (selectedFile !== null) {
         console.log("File detected, sending file...", selectedFile);
         await handleFileUpload(selectedFile);
+        
+        // Clear any text that might have been entered before file selection
+        // (this shouldn't happen due to the disabled input, but just to be safe)
+        setMessage('');
       }
     } catch (error) {
       console.error('Error sending message:', error);
@@ -265,10 +374,19 @@ const Footer = () => {
         message: error.message || 'Failed to send message',
         type: 'error'
       }));
-      setMessage(messageToSend);
+      
+      // Restore the text message if it failed to send
+      if (!selectedFile) {
+        setMessage(messageToSend);
+      }
     } finally {
       setSending(false);
       setSelectedFile(null);
+      
+      // Call the function to clear file input
+      if (clearFileSelectionRef.current) {
+        clearFileSelectionRef.current();
+      }
     }
   };
   
@@ -306,7 +424,9 @@ const Footer = () => {
             onSend={handleSendMessage}
             setOpenPicker={setOpenPicker}
             inputRef={inputRef}
+            selectedFile={selectedFile}
             setSelectedFile={setSelectedFile}
+            clearFileSelectionRef={clearFileSelectionRef}
           />
         </Stack>
         

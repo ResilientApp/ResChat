@@ -35,3 +35,5 @@ cd frontend
 npm i
 npm run dev
 ```
+## Create temporary files
+mkdir backend/Downloads & mkdir backend/temp_files

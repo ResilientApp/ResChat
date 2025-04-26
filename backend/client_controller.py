@@ -95,6 +95,27 @@ async def load_previous_handler(request):
     result = await run_sync(client.load_previous_chat_history)
     return web.json_response(result)
 
+async def load_specific_page_handler(request):
+    # Get the page number from query parameters
+    try:
+        page_number = int(request.query.get('page_number', 0))
+        if page_number <= 0:
+            return web.json_response({
+                "result": False, 
+                "message": f"Invalid page number: {page_number}", 
+                "chat_history": {}
+            })
+    except ValueError:
+        return web.json_response({
+            "result": False, 
+            "message": "Invalid page number format, must be an integer", 
+            "chat_history": {}
+        })
+        
+    # Call the client function to load the specific page
+    result = await run_sync(client.load_specific_page, page_number)
+    return web.json_response(result)
+
 async def download_file_handler(request):
     data = await request.json()
     save_path = data.get("save_path")
@@ -202,6 +223,7 @@ routes = [
     web.get('/update_chat_history', update_chat_history_handler),
     web.get('/initial_load_chat_history', initial_load_handler),
     web.get('/load_previous_chat_history', load_previous_handler),
+    web.get('/load_specific_page', load_specific_page_handler),
     web.post('/download_file', download_file_handler),
     web.get('/get_friend_list', get_friend_list_handler),
     web.post('/upload_temp_file', temp_file_upload_handler),

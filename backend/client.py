@@ -451,6 +451,83 @@ def load_previous_chat_history() -> {}:
     return {"result": True, "message": f"page {current_chat_previous_page_number + 1} loaded successfully", 
             "chat_history": current_chat_history}
 
+def load_specific_page(page_number: int) -> {}:
+    """
+    Load a specific page of chat history by page number.
+    This allows the frontend to request pages in any order.
+    """
+    global current_chat_history
+    
+    # Validate page number - it must be positive
+    if page_number < 1:
+        return {"result": False, "message": f"Invalid page number {page_number}", "chat_history": {}}
+    
+    # Check if we already have this page loaded
+    if page_number in current_chat_history:
+        return {"result": True, "message": f"Page {page_number} already loaded", 
+                "chat_history": {page_number: current_chat_history[page_number]}}
+    
+    # Get the max page number to make sure we're not requesting a non-existent page
+    max_page = int(get_kv(current_chatting_page_name + " PAGE_NUM"))
+    if page_number > max_page:
+        return {"result": False, "message": f"Page {page_number} does not exist (max is {max_page})", 
+                "chat_history": {}}
+    
+    # Get the requested page's messages
+    page_string = get_kv(current_chatting_page_name + " " + str(page_number))
+    
+    # If page is empty or doesn't exist
+    if not page_string or page_string == "" or page_string == " " or page_string == "\n":
+        return {"result": False, "message": f"Page {page_number} is empty or does not exist", 
+                "chat_history": {}}
+    
+    # Process all messages from the page
+    page_messages = from_string(page_string).all_messages()
+    message_list = []
+    
+    for message in page_messages:
+        # Check sender
+        sender = (message[0] == my_username)
+
+        if message[1] == "FILE":
+            try:
+                file_info = string_to_file_message_dict(message[3]) if callable(globals().get('string_to_file_message_dict')) else message[3]
+                encrypted_aes_key = message[4] if sender else message[5]
+                file_info["key"] = decrypt_aes_key_with_rsa(encrypted_aes_key, my_private_key)
+                message_list.append({
+                    "sender": sender, 
+                    "message_type": "FILE", 
+                    "time_stamp": message[2],
+                    "message": file_info
+                })
+            except Exception as e:
+                write_log_client(f"Error processing file message on page {page_number}: {str(e)}")
+        else:
+            try:
+                encrypted_aes_key = message[4] if sender else message[5]
+                decrypted_message = decrypt_text_with_aes(
+                    message[3],
+                    decrypt_aes_key_with_rsa(encrypted_aes_key, my_private_key)
+                )
+                message_list.append({
+                    "sender": sender, 
+                    "message_type": "TEXT", 
+                    "time_stamp": message[2],
+                    "message": decrypted_message
+                })
+            except Exception as e:
+                write_log_client(f"Error processing text message on page {page_number}: {str(e)}")
+    
+    # Save the loaded page in our chat history
+    current_chat_history[page_number] = message_list
+    
+    # Return just this page to avoid sending unnecessary data
+    return {
+        "result": True, 
+        "message": f"Page {page_number} loaded successfully", 
+        "chat_history": {page_number: message_list}
+    }
+
 
 def download_and_decrypt_file(save_path: str, file_info: {}) -> {}:
     aes_key = file_info["key"]

@@ -75,7 +75,7 @@ def clear_cache():
 def download_avatar(friend_list: {}, username=None) -> {}:
     try:
         from ipfs import download_file_from_ipfs
-        paths = ["profile_pictures/", "../frontend/public/profile_pictures/"]
+        paths = ["profile_pictures/"]
         avatar_cid = ""
         if username is None:
             for user in friend_list:

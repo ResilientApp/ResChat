@@ -87,11 +87,13 @@ def download_avatar(friend_list: {}, username=None) -> {}:
                     if not os.path.exists(avatar_path):
                         download_file_from_ipfs(avatar_cid, avatar_path)
         else:
-            if username in friend_list:
-                avatar_cid = friend_list[username]["avatar_cid"]
+            for user in friend_list:
+                avatar_cid = friend_list[user]["avatar_cid"]
                 for path in paths:
                     avatar_path = path + avatar_cid + ".jpg"
+                    print("Checking avatar path:", avatar_path)
                     if not os.path.exists(avatar_path):
+                        print(f"Downloading {avatar_cid} to {avatar_path}")
                         download_file_from_ipfs(avatar_cid, avatar_path)
                     
             user_cid = get_kv(username + " AVATAR")

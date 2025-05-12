@@ -23,6 +23,7 @@ import ToggleButton from "./ToggleButton";
 import SettingDirection from "./SettingDirection";
 import SettingFullscreen from "./SettingFullscreen";
 import SettingColorPresets from "./SettingColorPresets";
+import SettingMode from "./SettingMode";
 
 // ----------------------------------------------------------------------
 
@@ -136,6 +137,11 @@ export default function SettingsDrawer() {
 
               <Scrollbar sx={{ flexGrow: 1 }}>
                 <Stack spacing={3} sx={{ p: 3 }}>
+                  <Stack spacing={1.5}>
+                    <Typography variant="subtitle2">Mode</Typography>
+                    <SettingMode />
+                  </Stack>
+
                   <Stack spacing={1.5}>
                     <Typography variant="subtitle2">Direction</Typography>
                     <SettingDirection />

@@ -173,7 +173,7 @@ const Message = ({ messages }) => {
                           {msg.message.file_name}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                          Size: {(msg.message.file_size / 1024).toFixed(2)} KB
+                          Size: {(msg.message.file_size / 1024).toFixed(2)} MB
                         </Typography>
                       </Stack>
                       <Tooltip title="Download">

@@ -27,3 +27,5 @@ uploads/
 client_log.txt
 Downloads/
 temp_files/
+
+**/.claude/settings.local.json

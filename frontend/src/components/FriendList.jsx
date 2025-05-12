@@ -20,7 +20,13 @@ import {
   Box,
   CircularProgress
 } from '@mui/material';
-import { DotsThreeVertical, Pencil, UserMinus, UserPlus } from 'phosphor-react';
+import { 
+  DotsThreeVertical, 
+  Pencil, 
+  UserMinus, 
+  UserPlus
+} from 'phosphor-react';
+import axios from '../utils/axios';
 import { useDispatch, useSelector } from 'react-redux';
 import { 
   setSelectedFriend, 
@@ -29,7 +35,12 @@ import {
   removeFriend,
   showNotification
 } from '../redux/slices/app.jsx';
-import { getFriendList, changeNickname, deleteFriend, addFriend } from '../services/chat';
+import { 
+  getFriendList, 
+  changeNickname, 
+  deleteFriend, 
+  addFriend
+} from '../services/chat';
 
 const FriendList = ({ onSelect }) => {
   const dispatch = useDispatch();
@@ -233,7 +244,7 @@ const FriendList = ({ onSelect }) => {
               >
                 <ListItemAvatar>
                   <Avatar
-                    src={info.avatar_cid ? `http://localhost:8000/profile_pictures/${info.avatar_cid}.jpg` : null}
+                    src={info.avatar_cid ? `${axios.defaults.baseURL}/profile_pictures/${info.avatar_cid}.jpg` : null}
                     alt={info.nick_name || username}
                   />
                 </ListItemAvatar>

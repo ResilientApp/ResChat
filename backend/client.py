@@ -307,6 +307,7 @@ def update_chat_history():
         if page_number == 1:
             return initial_load_chat_history()
 
+        current_chat_history = load_previous_chat_history()["chat_history"]
         previous_page_local_messages = current_chat_history.get(page_number - 1, [])
 
         if len(previous_page_local_messages) != 20:
@@ -449,6 +450,132 @@ def load_previous_chat_history() -> {}:
     current_chat_previous_page_number -= 1
     return {"result": True, "message": f"page {current_chat_previous_page_number + 1} loaded successfully", 
             "chat_history": current_chat_history}
+
+def load_specific_page(page_number: int) -> {}:
+    """
+    Load a specific page of chat history by page number.
+    This allows the frontend to request pages in any order.
+    """
+    global current_chat_history
+    
+    # Validate page number - it must be positive
+    if page_number < 1:
+        return {"result": False, "message": f"Invalid page number {page_number}", "chat_history": {}}
+    
+    # Check if we already have this page loaded
+    if page_number in current_chat_history:
+        return {"result": True, "message": f"Page {page_number} already loaded", 
+                "chat_history": {page_number: current_chat_history[page_number]}}
+    
+    # Get the max page number to make sure we're not requesting a non-existent page
+    max_page = int(get_kv(current_chatting_page_name + " PAGE_NUM"))
+    if page_number > max_page:
+        return {"result": False, "message": f"Page {page_number} does not exist (max is {max_page})", 
+                "chat_history": {}}
+    
+    # Get the requested page's messages
+    page_string = get_kv(current_chatting_page_name + " " + str(page_number))
+    
+    # If page is empty or doesn't exist
+    if not page_string or page_string == "" or page_string == " " or page_string == "\n":
+        return {"result": False, "message": f"Page {page_number} is empty or does not exist", 
+                "chat_history": {}}
+    
+    # Process all messages from the page
+    page_messages = from_string(page_string).all_messages()
+    message_list = []
+    
+    for message in page_messages:
+        # Check sender
+        sender = (message[0] == my_username)
+
+        if message[1] == "FILE":
+            try:
+                file_info = string_to_file_message_dict(message[3]) if callable(globals().get('string_to_file_message_dict')) else message[3]
+                encrypted_aes_key = message[4] if sender else message[5]
+                file_info["key"] = decrypt_aes_key_with_rsa(encrypted_aes_key, my_private_key)
+                message_list.append({
+                    "sender": sender, 
+                    "message_type": "FILE", 
+                    "time_stamp": message[2],
+                    "message": file_info
+                })
+            except Exception as e:
+                write_log_client(f"Error processing file message on page {page_number}: {str(e)}")
+        else:
+            try:
+                encrypted_aes_key = message[4] if sender else message[5]
+                decrypted_message = decrypt_text_with_aes(
+                    message[3],
+                    decrypt_aes_key_with_rsa(encrypted_aes_key, my_private_key)
+                )
+                message_list.append({
+                    "sender": sender, 
+                    "message_type": "TEXT", 
+                    "time_stamp": message[2],
+                    "message": decrypted_message
+                })
+            except Exception as e:
+                write_log_client(f"Error processing text message on page {page_number}: {str(e)}")
+    
+    # Save the loaded page in our chat history
+    current_chat_history[page_number] = message_list
+    
+    # Return just this page to avoid sending unnecessary data
+    return {
+        "result": True, 
+        "message": f"Page {page_number} loaded successfully", 
+        "chat_history": {page_number: message_list}
+    }
+
+
+def update_user_avatar(avatar_file_path: str) -> {}:
+    """
+    Updates the current user's avatar by uploading it to IPFS and updating the CID in RSDB
+    
+    Args:
+        avatar_file_path: Path to the new avatar file
+        
+    Returns:
+        Dictionary with result status and message or avatar_cid if successful
+    """
+    global my_username
+    
+    if not my_username:
+        return {"result": False, "message": "Not logged in"}
+    
+    if not os.path.exists(avatar_file_path):
+        return {"result": False, "message": "Avatar file not found"}
+    
+    try:
+        # Upload avatar to IPFS
+        avatar_cid = add_file_to_cluster(avatar_file_path)
+        
+        if not avatar_cid:
+            return {"result": False, "message": "Failed to upload avatar to IPFS"}
+        
+        # Update avatar CID in RSDB
+        result = update_avatar(my_username, avatar_cid)
+        
+        if result["result"]:
+            # Save a copy to profile_pictures folder for immediate access
+            avatar_destination = os.path.join("profile_pictures", f"{avatar_cid}.jpg")
+            shutil.copy(avatar_file_path, avatar_destination)
+            
+            # Delete the temporary uploaded file
+            if os.path.exists(avatar_file_path):
+                os.remove(avatar_file_path)
+            
+            return {
+                "result": True, 
+                "message": "Avatar updated successfully", 
+                "avatar_cid": avatar_cid
+            }
+        else:
+            return result
+            
+    except Exception as e:
+        return {"result": False, "message": f"Error updating avatar: {str(e)}"}
 
 
 def download_and_decrypt_file(save_path: str, file_info: {}) -> {}:

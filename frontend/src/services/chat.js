@@ -108,7 +108,7 @@ export const sendFile = async (filePath) => {
     console.error('Error sending file:', error);
     return {
       result: false,
-      message: error.response?.data?.message || 'Failed to send file'
+      message: error.response?.data?.message || 'Failed to send file, Retrying...'
     };
   }
 };
@@ -168,13 +168,47 @@ export const initialLoadChatHistory = async () => {
 // Load previous chat history (older messages)
 export const loadPreviousChatHistory = async () => {
   try {
+    console.log('Calling API: /load_previous_chat_history');
     const response = await axios.get('/load_previous_chat_history');
+    console.log('API response from loadPreviousChatHistory:', response.data);
+    
+    // If we got an empty response but it was successful, explicitly log that
+    if (response.data && response.data.result && 
+        (!response.data.chat_history || Object.keys(response.data.chat_history).length === 0)) {
+      console.warn('API returned success but no chat history pages');
+    }
+    
     return response.data;
   } catch (error) {
     console.error('Error loading previous chat history:', error);
     return {
       result: false,
       message: error.response?.data?.message || 'Failed to load previous messages',
+      chat_history: {}
+    };
+  }
+};
+
+// Load a specific page of chat history
+export const loadSpecificPage = async (pageNumber) => {
+  try {
+    console.log(`Calling API: /load_specific_page with pageNumber=${pageNumber}`);
+    const response = await axios.get('/load_specific_page', {
+      params: { page_number: pageNumber }
+    });
+    console.log('API response from loadSpecificPage:', response.data);
+    
+    if (response.data && response.data.result && 
+        (!response.data.chat_history || Object.keys(response.data.chat_history).length === 0)) {
+      console.warn(`API returned success but no chat history for page ${pageNumber}`);
+    }
+    
+    return response.data;
+  } catch (error) {
+    console.error(`Error loading specific page ${pageNumber}:`, error);
+    return {
+      result: false,
+      message: error.response?.data?.message || `Failed to load page ${pageNumber}`,
       chat_history: {}
     };
   }
@@ -193,6 +227,48 @@ export const downloadFile = async (savePath, fileInfo) => {
     return {
       result: false,
       message: error.response?.data?.message || 'Failed to download file'
+    };
+  }
+};
+
+// Upload and update user's avatar
+export const uploadAvatar = async (file) => {
+  try {
+    // Create form data for multipart upload
+    const formData = new FormData();
+    formData.append('avatar', file);
+    
+    console.log('Uploading new avatar');
+    const response = await axios.post('/update_avatar', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    
+    console.log('Avatar update response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error updating avatar:', error);
+    return {
+      result: false,
+      message: error.response?.data?.message || 'Failed to update avatar'
+    };
+  }
+};
+
+// Refresh avatars to get the latest profile pictures of friends
+export const refreshAvatars = async () => {
+  try {
+    console.log('Refreshing avatars');
+    const response = await axios.get('/refresh_avatars');
+    console.log('Avatar refresh response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error refreshing avatars:', error);
+    return {
+      result: false,
+      message: error.response?.data?.message || 'Failed to refresh avatars',
+      friend_list: {}
     };
   }
 };

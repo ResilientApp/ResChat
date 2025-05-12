@@ -18,8 +18,7 @@ const ProfileForm = () => {
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [uploading, setUploading] = useState(false);
   const username = localStorage.getItem('username');
-  const currentAvatarCid = localStorage.getItem('avatar_cid');
-
+  const currentAvatarCid = localStorage.getItem('user_cid');
   // Load the current avatar if available
   useEffect(() => {
     if (currentAvatarCid) {
@@ -60,7 +59,7 @@ const ProfileForm = () => {
   };
 
   const methods = useForm({
-    resolver: yupResolver(profileSchema),
+    //resolver: yupResolver(profileSchema),
     defaultValues
   });
 
@@ -76,7 +75,8 @@ const ProfileForm = () => {
       if (response.result) {
         // Update local storage with new avatar CID
         if (response.avatar_cid) {
-          localStorage.setItem('avatar_cid', response.avatar_cid);
+          
+          localStorage.setItem('user_cid', response.avatar_cid);
           
           // Refresh the avatars for all friends to ensure they get the latest avatar
           try {

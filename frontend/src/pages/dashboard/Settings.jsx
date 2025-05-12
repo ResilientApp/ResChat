@@ -10,14 +10,14 @@ import axios from '../../utils/axios';
 const Settings = () => {
     const theme = useTheme();
     const { username } = useSelector((state) => state.app);
-    const [avatarCid, setAvatarCid] = useState(localStorage.getItem('avatar_cid'));
+    const [avatarCid, setAvatarCid] = useState(localStorage.getItem('user_cid'));
     const [openShortcuts, setOpenShortcuts] = useState(false);
     const [selectedOption, setSelectedOption] = useState('profile');
 
     useEffect(() => {
         // Update avatar CID if it changes in localStorage
         const handleStorageChange = () => {
-            setAvatarCid(localStorage.getItem('avatar_cid'));
+            setAvatarCid(localStorage.getItem('user_cid'));
         };
         
         window.addEventListener('storage', handleStorageChange);

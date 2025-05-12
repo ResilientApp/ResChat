@@ -23,7 +23,7 @@ export default function RHFTextField({ name, helperText, ...other }) {
           value={typeof field.value === "number" && field.value === 0 ? "" : field.value}
           error={!!error}
           helperText={error ? error.message : helperText}
-          multiline
+          multiline={other.type !== 'password'}
           maxRows={3}
           {...other}
         />
